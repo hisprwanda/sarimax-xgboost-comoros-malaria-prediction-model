@@ -465,10 +465,12 @@ def build_html(df, results_raw, widths_raw, oracle):
     Models are fitted once on historical data; only the future climate inputs are varied.
     Under <strong>short-range forecast noise</strong> (±15% rainfall, ±0.8°C, ±4% humidity), CRPS degradation
     is minimal for all models (&lt;3%). Under <strong>seasonal-range noise</strong> (±50% rainfall, ±2.5°C),
-    degradation reaches ~10-18%. The <strong>Ensemble S+X champion degrades least in proportional terms</strong>:
-    its SARIMAX component relies on lagged climate signals (which are partially exact from the training tail),
-    while its XGBoost component captures non-linear signal even under noise.
-    These results confirm the model is operationally viable for 1-8 week health early-warning.
+    degradation reaches 10-20%. <strong>XGBoost is the most noise-robust model</strong>: its lag feature set
+    buffers early test weeks from noise (lag features draw on exact training-tail values), and its quantile
+    regression naturally widens uncertainty under noisy inputs.
+    SARIMAX baseline degrades the most (15-20% seasonal) because it uses raw climate values with no
+    historical buffering. Ensemble S+X sits between both components. All models remain viable for
+    operational 1-4 week forecasting (&lt;5% CRPS degradation under short-range forecast noise).
   </p>
 </div>
 
