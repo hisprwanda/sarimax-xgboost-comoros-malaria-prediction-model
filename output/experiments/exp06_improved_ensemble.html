@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Exp 06 - Improved Ensemble</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --page:#f2eeff;--card:#fff;--border:#ddd5f5;--border-h:#c9bef0;
+  --text:#2a2044;--sub1:#544873;--sub0:#7a6e92;--muted:#a099bb;
+  --mauve:#8839ef;--blue:#1e66f5;--teal:#179299;--green:#40a02b;
+  --peach:#fe640b;--red:#d20f39;--sky:#04a5e5;--lavender:#7287fd;
+  --yellow:#c97b0d;--surface:#ebe4ff;
+}
+body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--page);color:var(--text);padding:28px 24px 48px;line-height:1.55}
+.header{text-align:center;margin-bottom:28px;padding:36px 32px 26px;background:linear-gradient(160deg,#fff 0%,#f3eeff 100%);border-radius:20px;border:1px solid var(--border);box-shadow:0 2px 20px #8839ef0d;position:relative;overflow:hidden}
+.header::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 55% 70% at 10% 100%,#7287fd12 0%,transparent 60%),radial-gradient(ellipse 45% 60% at 90% 0%,#04a5e510 0%,transparent 60%);pointer-events:none}
+.header h1{font-size:1.75rem;font-weight:800;letter-spacing:-.4px;background:linear-gradient(120deg,var(--mauve) 0%,var(--blue) 55%,var(--teal) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:6px}
+.header .sub{color:var(--sub0);font-size:.86rem}
+.exp-tag{display:inline-block;background:#8839ef14;border:1px solid #8839ef33;color:var(--mauve);padding:4px 14px;border-radius:20px;font-size:.74rem;font-weight:700;letter-spacing:.3px;margin-top:10px}
+.section-label{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted);margin:28px 0 14px;display:flex;align-items:center;gap:8px}
+.section-label::after{content:'';flex:1;height:1px;background:var(--border)}
+.grid{display:grid;gap:16px;margin-bottom:4px}
+.grid-2{grid-template-columns:1fr 1fr}
+.grid-3{grid-template-columns:1fr 1fr 1fr}
+@media(max-width:900px){.grid-2,.grid-3{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:22px 24px;box-shadow:0 1px 6px #0001}
+.card:hover{box-shadow:0 4px 16px #8839ef12;border-color:var(--border-h)}
+.card-title{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:1.1px;color:var(--muted);margin-bottom:16px;display:flex;align-items:center;gap:7px}
+.dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:24px}
+.kpi{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px 22px 16px;position:relative;overflow:hidden}
+.kpi::after{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:14px 14px 0 0}
+.kpi:nth-child(1)::after{background:linear-gradient(90deg,var(--peach),var(--yellow))}
+.kpi:nth-child(2)::after{background:linear-gradient(90deg,var(--green),var(--teal))}
+.kpi:nth-child(3)::after{background:linear-gradient(90deg,var(--blue),var(--sky))}
+.kpi:nth-child(4)::after{background:linear-gradient(90deg,var(--mauve),var(--lavender))}
+.kpi:nth-child(5)::after{background:linear-gradient(90deg,var(--sky),var(--teal))}
+.kpi-label{font-size:.67rem;color:var(--muted);text-transform:uppercase;letter-spacing:1.2px;font-weight:700}
+.kpi-value{font-family:'JetBrains Mono',monospace;font-size:1.85rem;font-weight:700;margin-top:5px;letter-spacing:-1px;line-height:1}
+.kpi-sub{font-size:.72rem;color:var(--muted);margin-top:5px}
+table{width:100%;border-collapse:collapse;font-size:.83rem}
+thead th{background:var(--surface);color:var(--sub0);font-weight:700;text-transform:uppercase;font-size:.65rem;letter-spacing:.9px;padding:9px 12px;text-align:left;border-bottom:1px solid var(--border)}
+tbody td{padding:10px 12px;border-bottom:1px solid #f0ebff;color:var(--sub1);vertical-align:middle}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:#f7f4ff}
+.finding{background:#fff;border:1px solid var(--border);border-left:4px solid var(--mauve);border-radius:0 12px 12px 0;padding:16px 20px;font-size:.88rem;line-height:1.65}
+.rec-box{background:#40a02b12;border:1px solid #40a02b33;border-radius:12px;padding:14px 18px;margin-top:14px;font-size:.85rem;color:#1a5c10}
+.config-badge{display:inline-block;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-size:.8rem;font-family:'JetBrains Mono',monospace;color:var(--sub1);margin:4px}
+canvas{max-height:300px}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Experiment 06 — Improved Ensemble</h1>
+  <div class="sub">
+    Tuned SARIMAX (Exp 03) + Tuned Prophet (Exp 04) + Tuned XGBoost (Exp 05)
+    &nbsp;·&nbsp; 150 samples per location/week via concatenation
+  </div>
+  <div class="exp-tag">EXP 06 / IMPROVED ENSEMBLE</div>
+</div>
+
+<div class="section-label">Original vs Improved Ensemble</div>
+<div class="kpi-row">
+  <div class="kpi">
+    <div class="kpi-label">Original Ensemble CRPS</div>
+    <div class="kpi-value" style="color:var(--peach)">29.664</div>
+    <div class="kpi-sub">SARIMAX+feat · Prophet base · XGB bootstrap</div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-label">Improved Ensemble CRPS</div>
+    <div class="kpi-value" style="color:var(--green)">27.297</div>
+    <div class="kpi-sub">All three components tuned &nbsp;·&nbsp; <span style="color:var(--green);font-weight:700">▼ 2.367</span> vs original</div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-label">Original 80% Coverage</div>
+    <div class="kpi-value" style="color:var(--blue)">70.3%</div>
+    <div class="kpi-sub">target: 80%</div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-label">Improved 80% Coverage</div>
+    <div class="kpi-value" style="color:var(--mauve)">80.2%</div>
+    <div class="kpi-sub"><span style="color:var(--green);font-weight:700">▲ 9.9</span> pp vs original</div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-label">Improved 95% Coverage</div>
+    <div class="kpi-value" style="color:var(--teal)">94.0%</div>
+    <div class="kpi-sub">original: 91.8%</div>
+  </div>
+</div>
+
+<div class="section-label">Configs Applied</div>
+<div style="margin-bottom:20px">
+  <span class="config-badge">SARIMAX(1,0,1) · informed features |r|&gt;0.1</span>
+  <span class="config-badge">Prophet · cps=0.1 · sps=2.0 · multiplicative</span>
+  <span class="config-badge">XGBoost quantile · n_est=100 · depth=4 · lr=0.05</span>
+</div>
+
+<div class="section-label">Ensemble Comparison Charts</div>
+<div class="grid grid-2">
+  <div class="card">
+    <div class="card-title"><span class="dot" style="background:var(--mauve)"></span>
+      CRPS — components + ensembles</div>
+    <canvas id="crpsChart"></canvas>
+  </div>
+  <div class="card">
+    <div class="card-title"><span class="dot" style="background:var(--teal)"></span>
+      80% PI Coverage — components + ensembles</div>
+    <canvas id="covChart"></canvas>
+  </div>
+</div>
+
+<div class="section-label">Per-District CRPS — Original vs Improved Ensemble</div>
+<div class="card">
+  <canvas id="distChart" style="max-height:260px"></canvas>
+</div>
+
+<div class="section-label">Individual Tuned Component Metrics</div>
+<div class="card" style="overflow:auto">
+  <table>
+    <thead>
+      <tr><th>Component</th><th>avg CRPS</th><th>avg RMSE</th>
+          <th>80% cov</th><th>95% cov</th></tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><strong>SARIMAX (tuned)</strong><br>
+            <span style="font-size:.74rem;color:var(--sub0)">Informed features |r|>0.10  ·  SARIMAX(1,0,1)</span></td>
+          <td style="font-family:'JetBrains Mono',monospace">26.973</td>
+          <td style="font-family:'JetBrains Mono',monospace">49.925</td>
+          <td style="font-family:'JetBrains Mono',monospace">85.7%</td>
+          <td style="font-family:'JetBrains Mono',monospace">94.0%</td>
+        </tr>
+        <tr>
+          <td><strong>Prophet (tuned)</strong><br>
+            <span style="font-size:.74rem;color:var(--sub0)">cps=0.1 · sps=2.0 · multiplicative</span></td>
+          <td style="font-family:'JetBrains Mono',monospace">38.443</td>
+          <td style="font-family:'JetBrains Mono',monospace">66.822</td>
+          <td style="font-family:'JetBrains Mono',monospace">58.2%</td>
+          <td style="font-family:'JetBrains Mono',monospace">73.1%</td>
+        </tr>
+        <tr>
+          <td><strong>XGBoost (tuned)</strong><br>
+            <span style="font-size:.74rem;color:var(--sub0)">Quantile regression · n_est=100 depth=4 lr=0.05</span></td>
+          <td style="font-family:'JetBrains Mono',monospace">27.827</td>
+          <td style="font-family:'JetBrains Mono',monospace">50.931</td>
+          <td style="font-family:'JetBrains Mono',monospace">53.3%</td>
+          <td style="font-family:'JetBrains Mono',monospace">73.1%</td>
+        </tr></tbody>
+  </table>
+</div>
+
+<div class="section-label">Findings</div>
+<div class="finding">
+  <strong>Ensemble result:</strong>
+  The improved ensemble achieves CRPS 27.297 vs original 29.664 — an improvement of 2.367 points. 
+  Coverage improved from 70.3% to 80.2%
+  (target: 80%), driven primarily by the XGBoost calibration fix.
+  <br><br>
+  <strong>What each improvement contributed:</strong>
+  <ul style="margin:10px 0 0 18px;line-height:2">
+    <li><strong>SARIMAX (Exp 03):</strong> District-specific feature selection reduced overfitting — fewer but better-targeted covariates per district.</li>
+    <li><strong>Prophet (Exp 04):</strong> Multiplicative seasonality + tighter seasonality prior (sps=2.0) improved CRPS. Coverage remains structurally limited on 78-week series.</li>
+    <li><strong>XGBoost (Exp 05):</strong> Quantile regression replaced residual bootstrap — the biggest coverage fix, bringing XGBoost from ~4% to 53.3% 80% coverage. This directly lifted the ensemble's calibration.</li>
+  </ul>
+  <br>
+  <strong>Sample concatenation rationale:</strong> The ensemble pools 50 samples from each
+  component (150 total). This preserves model disagreement as honest uncertainty — when
+  SARIMAX and Prophet diverge, the wide pool reflects that uncertainty rather than
+  collapsing it to a single averaged forecast.
+</div>
+<div class="rec-box">
+  <strong>Summary across all experiments:</strong>
+  SARIMAX(1,0,1) baseline remains the strongest single model for Comoros (CRPS ~27).
+  The improved ensemble provides broader coverage and robustness at the cost of some
+  CRPS precision. For an alert system, the ensemble's improved calibration is preferable
+  to the SARIMAX-only approach.
+</div>
+
+<script>
+const P = {"original": {"avg_crps": 29.664, "avg_rmse": 53.834, "avg_cov80": 0.7033, "avg_cov95": 0.9176, "dist_crps": [24.597, 17.556, 49.914, 19.029, 20.204, 58.095, 18.255], "dist_cov80": [0.5385, 0.6538, 0.4231, 0.8846, 0.7692, 0.8462, 0.8077]}, "improved": {"avg_crps": 27.297, "avg_rmse": 51.892, "avg_cov80": 0.8022, "avg_cov95": 0.9396, "dist_crps": [23.731, 15.239, 39.973, 18.363, 19.349, 56.551, 17.873], "dist_cov80": [0.6923, 0.6538, 0.7308, 0.8462, 0.9615, 0.8846, 0.8462]}, "components": {"sarimax": {"avg_crps": 26.973, "avg_rmse": 49.925, "avg_cov80": 0.8571, "avg_cov95": 0.9396, "dist_crps": [22.705, 12.9, 34.77, 23.439, 13.452, 64.867, 16.675], "dist_cov80": [0.6923, 0.9615, 0.8077, 0.8846, 0.9615, 0.8462, 0.8462]}, "prophet": {"avg_crps": 38.443, "avg_rmse": 66.822, "avg_cov80": 0.5824, "avg_cov95": 0.7308, "dist_crps": [30.568, 20.931, 57.481, 19.225, 44.122, 67.532, 29.245], "dist_cov80": [0.5385, 0.6154, 0.4231, 0.8462, 0.5, 0.8077, 0.3462]}, "xgboost": {"avg_crps": 27.827, "avg_rmse": 50.931, "avg_cov80": 0.533, "avg_cov95": 0.7308, "dist_crps": [23.749, 15.344, 40.355, 20.736, 16.991, 56.26, 21.353], "dist_cov80": [0.5, 0.4231, 0.5385, 0.3462, 0.8846, 0.7692, 0.2692]}}, "xgb_cfg": {"n_estimators": 100, "max_depth": 4, "learning_rate": 0.05, "avg_crps": 27.827, "avg_cov80": 0.533}, "districts": ["Hamahamet-Mboinkou", "Hambou", "Mbadjini Est", "Mbadjini Ouest", "Mitsamiouli-Mboud\u00e9", "Moroni-Bambao", "Oichili-Dimani"], "prophet_cfg": {"cps": 0.1, "sps": 2.0, "mode": "multiplicative"}, "sarimax_thr": 0.1};
+const ORG = P.original, IMP = P.improved, CMP = P.components;
+
+// ── Summary bar chart ─────────────────────────────────────────────────────────
+const LABELS  = ["SARIMAX\n(tuned)", "Prophet\n(tuned)", "XGBoost\n(tuned)",
+                  "Original\nEnsemble", "Improved\nEnsemble"];
+const crpsVals = [CMP.sarimax.avg_crps, CMP.prophet.avg_crps, CMP.xgboost.avg_crps,
+                   ORG.avg_crps, IMP.avg_crps];
+const covVals  = [+(CMP.sarimax.avg_cov80*100).toFixed(1),
+                   +(CMP.prophet.avg_cov80*100).toFixed(1),
+                   +(CMP.xgboost.avg_cov80*100).toFixed(1),
+                   +(ORG.avg_cov80*100).toFixed(1),
+                   +(IMP.avg_cov80*100).toFixed(1)];
+const BAR_COLORS = ["#1e66f5cc","#fe640bcc","#40a02bcc","#a099bbcc","#8839efcc"];
+
+new Chart(document.getElementById("crpsChart"), {
+  type:"bar",
+  data:{ labels:LABELS, datasets:[{
+    label:"avg CRPS", data:crpsVals,
+    backgroundColor:BAR_COLORS, borderRadius:6, borderSkipped:false
+  }]},
+  options:{
+    responsive:true, maintainAspectRatio:true,
+    plugins:{ legend:{display:false} },
+    scales:{
+      x:{ ticks:{font:{size:10}}, grid:{display:false} },
+      y:{ title:{display:true,text:"CRPS (lower = better)",font:{size:10}},
+           ticks:{font:{size:10}}, grid:{color:"#8839ef0a"} }
+    }
+  }
+});
+
+new Chart(document.getElementById("covChart"), {
+  type:"bar",
+  data:{ labels:LABELS, datasets:[
+    { label:"80% coverage (%)", data:covVals, backgroundColor:BAR_COLORS,
+       borderRadius:6, borderSkipped:false },
+    { label:"target 80%", data:Array(LABELS.length).fill(80),
+       type:"line", borderColor:"#40a02b88", borderDash:[3,3],
+       pointRadius:0, fill:false }
+  ]},
+  options:{
+    responsive:true, maintainAspectRatio:true,
+    plugins:{ legend:{ position:"top", labels:{ font:{size:10}, boxWidth:10 } } },
+    scales:{
+      x:{ ticks:{font:{size:10}}, grid:{display:false} },
+      y:{ title:{display:true,text:"80% PI Coverage (%)",font:{size:10}},
+           min:0, max:110, ticks:{font:{size:10}}, grid:{color:"#8839ef0a"} }
+    }
+  }
+});
+
+// Per-district CRPS
+const DISTS     = P.districts.map(d => d.replace("Mitsamiouli-Mboude","Mitsamiouli"));
+const dist_orig = P.original.dist_crps;
+const dist_impr = P.improved.dist_crps;
+
+new Chart(document.getElementById("distChart"), {
+  type:"bar",
+  data:{ labels:DISTS, datasets:[
+    { label:"Original Ensemble", data:dist_orig, backgroundColor:"#a099bbcc", borderRadius:4 },
+    { label:"Improved Ensemble", data:dist_impr, backgroundColor:"#8839efcc", borderRadius:4 },
+  ]},
+  options:{
+    responsive:true, maintainAspectRatio:true,
+    plugins:{ legend:{ position:"top", labels:{ font:{size:10}, boxWidth:10 } } },
+    scales:{
+      x:{ ticks:{font:{size:10},maxRotation:30}, grid:{display:false} },
+      y:{ title:{display:true,text:"CRPS",font:{size:10}},
+           ticks:{font:{size:10}}, grid:{color:"#8839ef0a"} }
+    }
+  }
+});
+</script>
+</body>
+</html>
