@@ -1,0 +1,35 @@
+name: comoros_malaria_climate
+
+env_manager: uv
+env_config_path: pyproject.toml
+
+# Climate covariates for comoros
+climate_covariates:
+  - rainfall
+  - mean_temperature
+  - humidity
+
+forecast_constraints:
+  min_lookahead: 1
+  max_lookahead: 12
+  time_unit: week
+
+user_options:
+  model_type:
+    description: "Model algorithm: sarimax (best CRPS on Comoros), prophet, or xgboost"
+    type: string
+    default: sarimax
+  n_samples:
+    description: "Probabilistic samples per location per week. 50 = production/alert standard (2% probability precision). Use 100 for research-grade CRPS metrics."
+    type: integer
+    default: 50
+  use_features:
+    description: "Add lagged/rolling/interaction climate features. False = baseline (recommended for Comoros with 2 years data). Set true when 3+ years available."
+    type: boolean
+    default: false
+
+entry_points:
+  train:
+    command: "python train.py {train_data} {model}"
+  predict:
+    command: "python predict.py {model} {historic_data} {future_data} {out_file}"

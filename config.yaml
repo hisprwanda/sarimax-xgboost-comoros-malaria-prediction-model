@@ -1,0 +1,5 @@
+model_type: sarimax   # sarimax | prophet | xgboost
+n_samples: 50         # 50 = production standard for alert systems (1/50 = 2% probability precision)
+                      # Use 100 for research/publication-grade CRPS; 200+ adds negligible benefit
+use_features: false   # Comoros benchmark: baseline SARIMAX outperforms features version (CRPS 26.1 vs 27.1)
+                      # Set true to re-test once 3+ years of data are available
