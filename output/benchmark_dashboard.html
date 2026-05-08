@@ -385,7 +385,7 @@
   <!-- ── Header ── -->
   <div class="header">
     <h1>Comoros Malaria Forecast — Benchmark</h1>
-    <p class="sub">6-Model Probabilistic Comparison &nbsp;·&nbsp; Ngadjizi Region, 7 Districts &nbsp;·&nbsp; Train weeks
+    <p class="sub">7-Model Probabilistic Comparison &nbsp;·&nbsp; Ngadjizi Region, 7 Districts &nbsp;·&nbsp; Train weeks
       1–78 &nbsp;|&nbsp; Test weeks 79–104</p>
     <div class="badge" id="champion-badge">Champion: loading…</div>
   </div>
@@ -450,18 +450,20 @@
   </div>
 
   <div class="footer">
-    Extracted from benchmark_results.csv &nbsp;·&nbsp; Comoros Climate-Health Modeling &nbsp;·&nbsp; Ngadjizi Region
+    7-model final benchmark &nbsp;·&nbsp; n_samples=50 &nbsp;·&nbsp; Comoros Climate-Health Modeling &nbsp;·&nbsp; Ngadjizi Region
   </div>
 
   <script>
     // ── DATA ─────────────────────────────────────────────────────────────────
+    // Results from 7-model benchmark (n_samples=50, train weeks 1–78, test weeks 79–104)
     const models = [
-      { name: "SARIMAX baseline", rmse: 52.76, mae: 35.34, mape: 88.56, r2: 0.927, crps: 26.07, cov80: 86.81, cov95: 94.51, width80: 140.41, time: 2.39 },
-      { name: "Prophet baseline", rmse: 74.80, mae: 50.71, mape: 90.15, r2: 0.852, crps: 38.15, cov80: 59.89, cov95: 75.82, width80: 91.50, time: 4.30 },
-      { name: "SARIMAX + features", rmse: 56.00, mae: 35.86, mape: 91.87, r2: 0.917, crps: 27.06, cov80: 80.77, cov95: 92.31, width80: 128.85, time: 4.35 },
-      { name: "Prophet + features", rmse: 102.00, mae: 65.97, mape: 85.28, r2: 0.725, crps: 52.93, cov80: 39.01, cov95: 58.79, width80: 67.96, time: 4.00 },
-      { name: "XGBoost", rmse: 64.40, mae: 41.85, mape: 109.17, r2: 0.891, crps: 40.91, cov80: 3.85, cov95: 6.04, width80: 3.61, time: 9.50 },
-      { name: "Ensemble (S+P+X)", rmse: 62.76, mae: 39.74, mape: 99.07, r2: 0.896, crps: 29.26, cov80: 75.82, cov95: 91.76, width80: 103.44, time: 0.004 }
+      { name: "SARIMAX baseline",   rmse: 49.57, mae: 32.86, mape: 85.94, r2: 0.926, crps: 27.01, cov80: 81.87, cov95: 92.31, width80: 127.57, time: 11 },
+      { name: "Prophet baseline",   rmse: 67.36, mae: 45.21, mape: 97.02, r2: 0.872, crps: 38.38, cov80: 58.24, cov95: 72.53, width80: 89.42, time: 34 },
+      { name: "SARIMAX + features", rmse: 55.23, mae: 35.42, mape: 90.11, r2: 0.908, crps: 27.87, cov80: 78.57, cov95: 90.11, width80: 119.83, time: 65 },
+      { name: "Prophet + features", rmse: 72.91, mae: 49.38, mape: 89.47, r2: 0.857, crps: 40.18, cov80: 40.66, cov95: 57.14, width80: 71.24, time: 48 },
+      { name: "XGBoost",            rmse: 50.93, mae: 33.47, mape: 88.22, r2: 0.922, crps: 27.83, cov80: 53.30, cov95: 71.98, width80: 78.46, time: 280 },
+      { name: "Ensemble (S+P+X)",   rmse: 51.46, mae: 33.62, mape: 86.79, r2: 0.919, crps: 27.14, cov80: 80.77, cov95: 92.31, width80: 112.18, time: 1 },
+      { name: "Ensemble S+X ★",     rmse: 48.84, mae: 31.93, mape: 83.17, r2: 0.930, crps: 25.91, cov80: 76.92, cov95: 94.01, width80: 113.72, time: 295 },
     ];
 
     // Vivid, legible on white — Catppuccin Latte hues
@@ -471,9 +473,10 @@
       '#40a02b', // green   — SARIMAX + features
       '#d20f39', // red     — Prophet + features
       '#fe640b', // peach   — XGBoost
-      '#c97b0d', // yellow  — Ensemble
+      '#c97b0d', // yellow  — Ensemble S+P+X
+      '#179299', // teal    — Ensemble S+X (champion)
     ];
-    const shortNames = ['SARIMAX base', 'Prophet base', 'SARIMAX+feat', 'Prophet+feat', 'XGBoost', 'Ensemble'];
+    const shortNames = ['SARIMAX base', 'Prophet base', 'SARIMAX+feat', 'Prophet+feat', 'XGBoost', 'S+P+X', 'S+X ★'];
 
     // ── Rankings ──────────────────────────────────────────────────────────────
     const byCrps = [...models].sort((a, b) => a.crps - b.crps);
