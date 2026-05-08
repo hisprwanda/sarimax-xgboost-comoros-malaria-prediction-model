@@ -457,13 +457,13 @@
     // ── DATA ─────────────────────────────────────────────────────────────────
     // Results from 7-model benchmark (n_samples=50, train weeks 1–78, test weeks 79–104)
     const models = [
-      { name: "SARIMAX baseline",   rmse: 49.57, mae: 32.86, mape: 85.94, r2: 0.926, crps: 27.01, cov80: 81.87, cov95: 92.31, width80: 127.57, time: 11 },
-      { name: "Prophet baseline",   rmse: 67.36, mae: 45.21, mape: 97.02, r2: 0.872, crps: 38.38, cov80: 58.24, cov95: 72.53, width80: 89.42, time: 34 },
-      { name: "SARIMAX + features", rmse: 55.23, mae: 35.42, mape: 90.11, r2: 0.908, crps: 27.87, cov80: 78.57, cov95: 90.11, width80: 119.83, time: 65 },
-      { name: "Prophet + features", rmse: 72.91, mae: 49.38, mape: 89.47, r2: 0.857, crps: 40.18, cov80: 40.66, cov95: 57.14, width80: 71.24, time: 48 },
-      { name: "XGBoost",            rmse: 50.93, mae: 33.47, mape: 88.22, r2: 0.922, crps: 27.83, cov80: 53.30, cov95: 71.98, width80: 78.46, time: 280 },
-      { name: "Ensemble (S+P+X)",   rmse: 51.46, mae: 33.62, mape: 86.79, r2: 0.919, crps: 27.14, cov80: 80.77, cov95: 92.31, width80: 112.18, time: 1 },
-      { name: "Ensemble S+X ★",     rmse: 48.84, mae: 31.93, mape: 83.17, r2: 0.930, crps: 25.91, cov80: 76.92, cov95: 94.01, width80: 113.72, time: 295 },
+      { name: "SARIMAX baseline",   rmse: 56.39, mae: 37.12, mape: 94.38, r2: 0.9161, crps: 27.01, cov80: 81.87, cov95: 95.05, width80: 138.40, time: 9 },
+      { name: "Prophet baseline",   rmse: 73.25, mae: 49.74, mape: 108.04, r2: 0.8584, crps: 38.26, cov80: 60.44, cov95: 73.08, width80: 94.18, time: 14 },
+      { name: "SARIMAX + features", rmse: 59.14, mae: 37.73, mape: 98.32, r2: 0.9077, crps: 27.99, cov80: 81.32, cov95: 91.76, width80: 127.19, time: 67 },
+      { name: "Prophet + features", rmse: 75.23, mae: 51.91, mape: 93.80, r2: 0.8506, crps: 41.64, cov80: 43.41, cov95: 56.59, width80: 72.64, time: 18 },
+      { name: "XGBoost",            rmse: 58.48, mae: 37.59, mape: 88.31, r2: 0.9097, crps: 27.83, cov80: 53.30, cov95: 73.08, width80: 84.99, time: 82 },
+      { name: "Ensemble (S+P+X)",   rmse: 57.24, mae: 37.14, mape: 91.02, r2: 0.9135, crps: 27.88, cov80: 79.67, cov95: 93.41, width80: 121.95, time: 1 },
+      { name: "Ensemble S+X ★",     rmse: 53.54, mae: 33.62, mape: 81.27, r2: 0.9243, crps: 25.73, cov80: 76.92, cov95: 94.51, width80: 122.31, time: 32 },
     ];
 
     // Vivid, legible on white — Catppuccin Latte hues
