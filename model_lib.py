@@ -7,6 +7,11 @@ Three model families:
   XGBoost  — gradient-boosted trees on engineered features + time dummies
 
 All produce probabilistic forecasts as (n_periods × n_samples) numpy arrays.
+
+Tuned defaults (from Exp 01–05 experiment series):
+  SARIMAX  — fixed (1,0,1) order; district-specific features at |r| > 0.10
+  Prophet  — cps=0.1, sps=2.0, multiplicative seasonality
+  XGBoost  — quantile regression (25 levels); n_est=100, depth=4, lr=0.05
 """
 
 import warnings
@@ -16,7 +21,6 @@ import pandas as pd
 # ── Constants ──────────────────────────────────────────────────────────────────
 
 # CHAP-declared covariates (must be present in every input CSV)
-# Comoros uses humidity, rainfall, and mean_temperature
 DEFAULT_COVARIATES = ["rainfall", "mean_temperature", "humidity"]
 
 # Number of trailing training rows kept for lag bridging at the train/predict boundary
@@ -33,6 +37,37 @@ EXTRA_COVARIATES = [
 ]
 
 DEFAULT_SARIMAX_ORDER = (1, 0, 1)
+
+# Exp 03: minimum |r| for a lag feature to be included per district
+SARIMAX_FEATURE_THRESHOLD = 0.10
+
+# Exp 04: tuned Prophet hyperparameters
+PROPHET_CPS  = 0.1            # changepoint_prior_scale
+PROPHET_SPS  = 2.0            # seasonality_prior_scale
+PROPHET_MODE = "multiplicative"
+
+# Exp 05: quantile levels for XGBoost uncertainty (replaces residual bootstrap)
+XGB_QUANTILE_LEVELS = np.linspace(0.025, 0.975, 25)
+XGB_N_ESTIMATORS    = 100
+XGB_MAX_DEPTH       = 4
+XGB_LEARNING_RATE   = 0.05
+
+# Lag → column name mapping used by compute_district_feature_map()
+_LAG_COL = {
+    ("rainfall",         1): "rainfall_lag1",
+    ("rainfall",         2): "rainfall_lag2",
+    ("rainfall",         3): "rainfall_lag3",
+    ("rainfall",         4): "rainfall_lag4",
+    ("mean_temperature", 1): "temp_lag1",
+    ("mean_temperature", 2): "temp_lag2",
+    ("humidity",         1): "humidity_lag1",
+    ("humidity",         2): "humidity_lag2",
+}
+_AVAILABLE_LAGS = {
+    "rainfall":         [1, 2, 3, 4],
+    "mean_temperature": [1, 2],
+    "humidity":         [1, 2],
+}
 
 
 # ── Week-period parsing ────────────────────────────────────────────────────────
@@ -101,6 +136,60 @@ def add_engineered_features(df: pd.DataFrame) -> pd.DataFrame:
     return out
 
 
+# ── District-specific feature selection (Exp 03) ──────────────────────────────
+
+def compute_district_feature_map(
+    train_df: pd.DataFrame,
+    threshold: float = SARIMAX_FEATURE_THRESHOLD,
+) -> dict:
+    """Return {district: [covariate_columns]} using per-district cross-correlation.
+
+    For each district and each climate variable, finds the lag 0–8 with the
+    highest |Pearson r| against disease_cases. Includes the corresponding lag
+    column when |r| > threshold and the lag is available in the engineered set.
+    Always includes the 3 base covariates regardless of correlation.
+
+    Call this on the training split only to avoid data leakage.
+    """
+    from scipy import stats as sp_stats
+
+    MAX_LAG = 8
+    districts = sorted(train_df["location"].unique())
+    feature_map = {}
+
+    for loc in districts:
+        grp = train_df[train_df["location"] == loc].sort_values("time_period")
+        y   = grp["disease_cases"].values
+        cols = list(DEFAULT_COVARIATES)
+
+        for var in DEFAULT_COVARIATES:
+            x = grp[var].values
+            best_lag, best_r = 0, 0.0
+            for lag in range(MAX_LAG + 1):
+                xi = x[:-lag] if lag > 0 else x
+                yi = y[lag:]  if lag > 0 else y
+                if len(xi) < 10:
+                    continue
+                r, _ = sp_stats.pearsonr(xi, yi)
+                if abs(r) > abs(best_r):
+                    best_r, best_lag = r, lag
+
+            if abs(best_r) > threshold and best_lag > 0:
+                avail = _AVAILABLE_LAGS.get(var, [])
+                chosen = next((l for l in sorted(avail, reverse=True)
+                               if l <= best_lag), None)
+                if chosen is None and avail:
+                    chosen = min(avail)
+                if chosen is not None:
+                    col = _LAG_COL.get((var, chosen))
+                    if col and col not in cols:
+                        cols.append(col)
+
+        feature_map[loc] = cols
+
+    return feature_map
+
+
 # ── SARIMAX ────────────────────────────────────────────────────────────────────
 
 def fit_sarimax_one(y: pd.Series, X: pd.DataFrame) -> dict:
@@ -162,8 +251,9 @@ def fit_prophet_one(y_df: pd.DataFrame, covariates: list) -> object:
             yearly_seasonality=True,
             weekly_seasonality=False,
             daily_seasonality=False,
-            seasonality_mode="additive",
-            changepoint_prior_scale=0.1,
+            seasonality_mode=PROPHET_MODE,
+            changepoint_prior_scale=PROPHET_CPS,
+            seasonality_prior_scale=PROPHET_SPS,
         )
         for cov in covariates:
             m.add_regressor(cov, standardize=True)
@@ -215,17 +305,21 @@ def _xgb_features(X_df: pd.DataFrame, time_index: pd.Index) -> np.ndarray:
 
 
 def fit_xgb_one(y: pd.Series, X: pd.DataFrame, time_index: pd.Index) -> dict:
-    """Fit an XGBoost regressor for a single district.
+    """Fit an XGBoost quantile regression model for a single district.
 
-    Probabilistic forecasts are generated via residual bootstrap.
+    Uses native multi-quantile objective (Exp 05 calibration fix).
+    Replaces the old residual bootstrap which collapsed to near-zero intervals
+    because XGBoost's in-sample residuals were too small.
     """
     import xgboost as xgb
 
     X_feat = _xgb_features(X, time_index)
     model = xgb.XGBRegressor(
-        n_estimators=300,
-        max_depth=4,
-        learning_rate=0.05,
+        objective="reg:quantileerror",
+        quantile_alpha=XGB_QUANTILE_LEVELS,
+        n_estimators=XGB_N_ESTIMATORS,
+        max_depth=XGB_MAX_DEPTH,
+        learning_rate=XGB_LEARNING_RATE,
         subsample=0.8,
         colsample_bytree=0.8,
         min_child_weight=3,
@@ -233,9 +327,8 @@ def fit_xgb_one(y: pd.Series, X: pd.DataFrame, time_index: pd.Index) -> dict:
         verbosity=0,
     )
     model.fit(X_feat, y.values)
-    residuals = y.values - model.predict(X_feat)
 
-    return {"model": model, "residuals": residuals}
+    return {"model": model, "quantile_levels": XGB_QUANTILE_LEVELS}
 
 
 def predict_xgb_one(
@@ -245,17 +338,26 @@ def predict_xgb_one(
     n_samples: int,
     rng: np.random.Generator,
 ) -> np.ndarray:
-    """Draw n_samples via residual bootstrap from a fitted XGBoost model.
+    """Draw n_samples by interpolating across predicted quantile distribution.
+
+    For each forecast step, draws uniform samples u ~ U(0,1) and interpolates
+    across the predicted quantile function — correctly capturing covariate-
+    conditional uncertainty without relying on in-sample residuals.
 
     Returns (n_periods, n_samples) array, clipped at 0.
     """
-    X_feat = _xgb_features(future_X, future_times)
-    point_pred = payload["model"].predict(X_feat)
-    residuals = payload["residuals"]
+    X_feat  = _xgb_features(future_X, future_times)
+    q_preds = payload["model"].predict(X_feat)   # (n_periods, n_quantiles)
+    q_levels = payload["quantile_levels"]
 
-    samples = np.array([
-        np.maximum(0, point_pred + rng.choice(residuals, size=len(point_pred)))
-        for _ in range(n_samples)
-    ]).T  # (n_periods, n_samples)
+    if q_preds.ndim == 1:
+        q_preds = q_preds[:, None]
+    q_preds = np.sort(q_preds, axis=1)           # enforce monotonicity
 
-    return samples
+    n_periods = q_preds.shape[0]
+    u = rng.uniform(0, 1, size=(n_periods, n_samples))
+    samples = np.zeros((n_periods, n_samples))
+    for t in range(n_periods):
+        samples[t] = np.interp(u[t], q_levels, q_preds[t])
+
+    return np.maximum(0, samples)

@@ -1,5 +1,5 @@
 """
-6-model benchmark for Comoros malaria-climate forecasting.
+7-model benchmark for Comoros malaria-climate forecasting.
 
 Configurations
 --------------
@@ -9,13 +9,15 @@ Configurations
 4. Prophet + features     — Prophet with same engineered feature set
 5. XGBoost                — gradient boosting on engineered features + temporal encoding
 6. Ensemble (S+P+X)       — concatenated samples from configs 3, 2, and 5
+7. Ensemble (S+X) ★       — SARIMAX tuned (informed features) + XGBoost calibrated (quantile reg)
+                             Champion model from Exp 07 experiment series.
 
 Split: train on first 78 weeks (2024-W01 → 2025-W26)
        test  on last  26 weeks (2025-W27 → 2025-W52)
 
 Usage
 -----
-    python run_benchmark.py            # full run (n_samples=100)
+    python run_benchmark.py            # full run (n_samples=50)
     python run_benchmark.py --quick    # fast check (n_samples=20)
 """
 
@@ -25,6 +27,8 @@ import time
 import pickle
 import warnings
 import tempfile
+
+sys.stdout.reconfigure(encoding="utf-8")
 
 import numpy as np
 import pandas as pd
@@ -142,8 +146,9 @@ def _fit_predict_xgboost(train_df, future_df, covariates, rng) -> pd.DataFrame:
     return pd.DataFrame(records)
 
 
-def _ensemble(pred_a: pd.DataFrame, pred_b: pd.DataFrame, pred_c: pd.DataFrame) -> pd.DataFrame:
-    """Concatenate samples from three models to form an ensemble.
+def _ensemble(pred_a: pd.DataFrame, pred_b: pd.DataFrame,
+              pred_c: pd.DataFrame = None) -> pd.DataFrame:
+    """Concatenate samples from two or three models to form an ensemble.
 
     Concatenating (vs averaging medians) preserves the full uncertainty spread
     and avoids the calibration collapse caused by sample averaging.
@@ -158,10 +163,13 @@ def _ensemble(pred_a: pd.DataFrame, pred_b: pd.DataFrame, pred_c: pd.DataFrame) 
     n = N_SAMPLES
     a = _relabel(pred_a, 0)
     b = _relabel(pred_b, n)
-    c = _relabel(pred_c, 2 * n)
 
     merged = a.merge(b[keys + [f"sample_{i}" for i in range(n, 2*n)]], on=keys, how="inner")
-    merged = merged.merge(c[keys + [f"sample_{i}" for i in range(2*n, 3*n)]], on=keys, how="inner")
+
+    if pred_c is not None:
+        c = _relabel(pred_c, 2 * n)
+        merged = merged.merge(c[keys + [f"sample_{i}" for i in range(2*n, 3*n)]], on=keys, how="inner")
+
     return merged
 
 
@@ -170,7 +178,7 @@ def _ensemble(pred_a: pd.DataFrame, pred_b: pd.DataFrame, pred_c: pd.DataFrame) 
 def run():
     print(f"\n{'='*70}")
     print(f"  Comoros Malaria Forecast — 6-Model Benchmark")
-    print(f"  Train: weeks 1-{TRAIN_WEEKS} | Test: weeks {TRAIN_WEEKS+1}-104 | n_samples={N_SAMPLES}")
+    print(f"  Train: weeks 1-{TRAIN_WEEKS} | Test: weeks {TRAIN_WEEKS+1}-104 | n_samples={N_SAMPLES} | 7 configs")
     print(f"{'='*70}\n")
 
     truth_df = load_ground_truth()
@@ -179,7 +187,7 @@ def run():
     pred_cache = {}   # reuse fitted predictions across configs
 
     # ── Config 1: SARIMAX baseline ─────────────────────────────────────────────
-    print("Config 1/6 : SARIMAX baseline …")
+    print("Config 1/7 : SARIMAX baseline …")
     t0 = time.perf_counter()
     train_df, future_df, _ = load_and_split(with_features=False)
     covs = covariates_for(train_df, with_features=False)
@@ -190,10 +198,10 @@ def run():
     r["elapsed"] = elapsed
     results.append(r)
     pred_cache["sarimax_base"] = pred
-    print(f"  → CRPS={r['crps']:.0f}  RMSE={r['rmse']:.0f}  80%cov={r['cov80']*100:.1f}%  ({elapsed:.0f}s)")
+    print(f"  -> CRPS={r['crps']:.0f}  RMSE={r['rmse']:.0f}  80%cov={r['cov80']*100:.1f}%  ({elapsed:.0f}s)")
 
     # ── Config 2: Prophet baseline ─────────────────────────────────────────────
-    print("Config 2/6 : Prophet baseline …")
+    print("Config 2/7 : Prophet baseline …")
     t0 = time.perf_counter()
     rng = np.random.default_rng(RNG_SEED)
     pred = _fit_predict_prophet(train_df, future_df, covs, rng)
@@ -202,10 +210,10 @@ def run():
     r["elapsed"] = elapsed
     results.append(r)
     pred_cache["prophet_base"] = pred
-    print(f"  → CRPS={r['crps']:.0f}  RMSE={r['rmse']:.0f}  80%cov={r['cov80']*100:.1f}%  ({elapsed:.0f}s)")
+    print(f"  -> CRPS={r['crps']:.0f}  RMSE={r['rmse']:.0f}  80%cov={r['cov80']*100:.1f}%  ({elapsed:.0f}s)")
 
     # ── Config 3: SARIMAX + features ───────────────────────────────────────────
-    print("Config 3/6 : SARIMAX + features …")
+    print("Config 3/7 : SARIMAX + features …")
     t0 = time.perf_counter()
     train_df_f, future_df_f, _ = load_and_split(with_features=True)
     covs_f = covariates_for(train_df_f, with_features=True)
@@ -216,10 +224,10 @@ def run():
     r["elapsed"] = elapsed
     results.append(r)
     pred_cache["sarimax_feat"] = pred
-    print(f"  → CRPS={r['crps']:.0f}  RMSE={r['rmse']:.0f}  80%cov={r['cov80']*100:.1f}%  ({elapsed:.0f}s)")
+    print(f"  -> CRPS={r['crps']:.0f}  RMSE={r['rmse']:.0f}  80%cov={r['cov80']*100:.1f}%  ({elapsed:.0f}s)")
 
     # ── Config 4: Prophet + features ───────────────────────────────────────────
-    print("Config 4/6 : Prophet + features …")
+    print("Config 4/7 : Prophet + features …")
     t0 = time.perf_counter()
     rng = np.random.default_rng(RNG_SEED)
     pred = _fit_predict_prophet(train_df_f, future_df_f, covs_f, rng)
@@ -228,10 +236,10 @@ def run():
     r["elapsed"] = elapsed
     results.append(r)
     pred_cache["prophet_feat"] = pred
-    print(f"  → CRPS={r['crps']:.0f}  RMSE={r['rmse']:.0f}  80%cov={r['cov80']*100:.1f}%  ({elapsed:.0f}s)")
+    print(f"  -> CRPS={r['crps']:.0f}  RMSE={r['rmse']:.0f}  80%cov={r['cov80']*100:.1f}%  ({elapsed:.0f}s)")
 
     # ── Config 5: XGBoost ──────────────────────────────────────────────────────
-    print("Config 5/6 : XGBoost …")
+    print("Config 5/7 : XGBoost …")
     t0 = time.perf_counter()
     rng = np.random.default_rng(RNG_SEED)
     pred = _fit_predict_xgboost(train_df_f, future_df_f, covs_f, rng)
@@ -240,10 +248,10 @@ def run():
     r["elapsed"] = elapsed
     results.append(r)
     pred_cache["xgboost"] = pred
-    print(f"  → CRPS={r['crps']:.0f}  RMSE={r['rmse']:.0f}  80%cov={r['cov80']*100:.1f}%  ({elapsed:.0f}s)")
+    print(f"  -> CRPS={r['crps']:.0f}  RMSE={r['rmse']:.0f}  80%cov={r['cov80']*100:.1f}%  ({elapsed:.0f}s)")
 
     # ── Config 6: Ensemble (SARIMAX+feat + Prophet baseline + XGBoost) ─────────
-    print("Config 6/6 : Ensemble (S+feat  P+base  X) …")
+    print("Config 6/7 : Ensemble (S+feat  P+base  X) …")
     t0 = time.perf_counter()
     ensemble_pred = _ensemble(
         pred_cache["sarimax_feat"],
@@ -255,7 +263,43 @@ def run():
     r["elapsed"] = elapsed
     results.append(r)
     pred_cache["ensemble"] = ensemble_pred
-    print(f"  → CRPS={r['crps']:.0f}  RMSE={r['rmse']:.0f}  80%cov={r['cov80']*100:.1f}%  ({elapsed:.0f}s)")
+    print(f"  -> CRPS={r['crps']:.0f}  RMSE={r['rmse']:.0f}  80%cov={r['cov80']*100:.1f}%  ({elapsed:.0f}s)")
+
+    # ── Config 7: Ensemble S+X (champion) ─────────────────────────────────────
+    print("Config 7/7 : Ensemble S+X (SARIMAX tuned + XGBoost calibrated) …")
+    t0 = time.perf_counter()
+    feature_map = ml.compute_district_feature_map(train_df_f)
+    rng = np.random.default_rng(RNG_SEED)
+
+    # SARIMAX with district-specific informed features
+    sarimax_tuned_pred = []
+    for loc, grp in train_df_f.groupby("location", sort=False):
+        grp  = grp.sort_values("time_period")
+        covs = feature_map[loc]
+        y    = grp["disease_cases"].astype(float)
+        X    = grp[covs].astype(float)
+        payload = ml.fit_sarimax_one(y, X)
+        fgrp = future_df_f[future_df_f["location"] == loc].sort_values("time_period")
+        fX   = fgrp[covs].astype(float)
+        samp = ml.predict_sarimax_one(payload, fX, N_SAMPLES, rng)
+        for i, tp in enumerate(fgrp["time_period"]):
+            row = {"time_period": tp, "location": loc}
+            for j in range(N_SAMPLES):
+                row[f"sample_{j}"] = samp[i, j]
+            sarimax_tuned_pred.append(row)
+    sarimax_tuned_df = pd.DataFrame(sarimax_tuned_pred)
+
+    # XGBoost calibrated (quantile regression — already used in Config 5 via updated model_lib)
+    xgb_tuned_pred = _fit_predict_xgboost(train_df_f, future_df_f, covs_f, rng)
+
+    # Concatenate samples: 50 SARIMAX + 50 XGBoost = 100 per location/week
+    pred = _ensemble(sarimax_tuned_df, xgb_tuned_pred, None)
+    elapsed = time.perf_counter() - t0
+    r = evaluate(pred, truth_df, "Ensemble S+X")
+    r["elapsed"] = elapsed
+    results.append(r)
+    pred_cache["ensemble_sx"] = pred
+    print(f"  -> CRPS={r['crps']:.0f}  RMSE={r['rmse']:.0f}  80%cov={r['cov80']*100:.1f}%  ({elapsed:.0f}s)")
 
     # ── Summary ────────────────────────────────────────────────────────────────
     print_comparison(results)
@@ -288,7 +332,8 @@ def run():
         "Prophet + features": "prophet_feat",
         "XGBoost": "xgboost",
         "Ensemble (S+P+X)": "ensemble",
-    }.get(best["label"], "sarimax_feat")
+        "Ensemble S+X": "ensemble_sx",
+    }.get(best["label"], "ensemble_sx")
     best_pred = pred_cache.get(cache_key)
 
     if best_pred is not None:
