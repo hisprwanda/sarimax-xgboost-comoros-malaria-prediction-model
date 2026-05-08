@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Exp 05 - XGBoost Calibration</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --page:#f2eeff;--card:#fff;--border:#ddd5f5;--border-h:#c9bef0;
+  --text:#2a2044;--sub1:#544873;--sub0:#7a6e92;--muted:#a099bb;
+  --mauve:#8839ef;--blue:#1e66f5;--teal:#179299;--green:#40a02b;
+  --peach:#fe640b;--red:#d20f39;--sky:#04a5e5;--lavender:#7287fd;
+  --yellow:#c97b0d;--surface:#ebe4ff;
+}
+body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--page);color:var(--text);padding:28px 24px 48px;line-height:1.55}
+.header{text-align:center;margin-bottom:28px;padding:36px 32px 26px;background:linear-gradient(160deg,#fff 0%,#f3eeff 100%);border-radius:20px;border:1px solid var(--border);box-shadow:0 2px 20px #8839ef0d;position:relative;overflow:hidden}
+.header::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 55% 70% at 10% 100%,#7287fd12 0%,transparent 60%),radial-gradient(ellipse 45% 60% at 90% 0%,#04a5e510 0%,transparent 60%);pointer-events:none}
+.header h1{font-size:1.75rem;font-weight:800;letter-spacing:-.4px;background:linear-gradient(120deg,var(--mauve) 0%,var(--blue) 55%,var(--teal) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:6px}
+.header .sub{color:var(--sub0);font-size:.86rem}
+.exp-tag{display:inline-block;background:#8839ef14;border:1px solid #8839ef33;color:var(--mauve);padding:4px 14px;border-radius:20px;font-size:.74rem;font-weight:700;letter-spacing:.3px;margin-top:10px}
+.section-label{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted);margin:28px 0 14px;display:flex;align-items:center;gap:8px}
+.section-label::after{content:'';flex:1;height:1px;background:var(--border)}
+.grid{display:grid;gap:16px;margin-bottom:4px}
+.grid-2{grid-template-columns:1fr 1fr}
+.grid-3{grid-template-columns:1fr 1fr 1fr}
+@media(max-width:900px){.grid-2,.grid-3{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:22px 24px;box-shadow:0 1px 6px #0001}
+.card:hover{box-shadow:0 4px 16px #8839ef12;border-color:var(--border-h)}
+.card-title{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:1.1px;color:var(--muted);margin-bottom:16px;display:flex;align-items:center;gap:7px}
+.dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:24px}
+.kpi{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px 22px 16px;position:relative;overflow:hidden}
+.kpi::after{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:14px 14px 0 0}
+.kpi:nth-child(1)::after{background:linear-gradient(90deg,var(--red),var(--peach))}
+.kpi:nth-child(2)::after{background:linear-gradient(90deg,var(--green),var(--teal))}
+.kpi:nth-child(3)::after{background:linear-gradient(90deg,var(--blue),var(--sky))}
+.kpi:nth-child(4)::after{background:linear-gradient(90deg,var(--mauve),var(--lavender))}
+.kpi:nth-child(5)::after{background:linear-gradient(90deg,var(--yellow),var(--peach))}
+.kpi-label{font-size:.67rem;color:var(--muted);text-transform:uppercase;letter-spacing:1.2px;font-weight:700}
+.kpi-value{font-family:'JetBrains Mono',monospace;font-size:1.85rem;font-weight:700;margin-top:5px;letter-spacing:-1px;line-height:1}
+.kpi-sub{font-size:.72rem;color:var(--muted);margin-top:5px}
+table{width:100%;border-collapse:collapse;font-size:.83rem}
+thead th{background:var(--surface);color:var(--sub0);font-weight:700;text-transform:uppercase;font-size:.65rem;letter-spacing:.9px;padding:9px 12px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap}
+tbody td{padding:10px 12px;border-bottom:1px solid #f0ebff;color:var(--sub1);vertical-align:middle;white-space:nowrap}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:#f7f4ff}
+.finding{background:#fff;border:1px solid var(--border);border-left:4px solid var(--green);border-radius:0 12px 12px 0;padding:16px 20px;font-size:.88rem;line-height:1.65}
+.rec-box{background:#40a02b12;border:1px solid #40a02b33;border-radius:12px;padding:14px 18px;margin-top:14px;font-size:.85rem;color:#1a5c10}
+canvas{max-height:300px}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Experiment 05 — XGBoost Calibration Fix</h1>
+  <div class="sub">Residual bootstrap → Quantile regression &nbsp;·&nbsp;
+    25 quantile levels &nbsp;·&nbsp;
+    24 hyperparameter configs × 7 districts</div>
+  <div class="exp-tag">EXP 05 / XGBOOST CALIBRATION</div>
+</div>
+
+<div class="section-label">Before vs After Calibration</div>
+<div class="kpi-row">
+  <div class="kpi">
+    <div class="kpi-label">Bootstrap 80% Coverage</div>
+    <div class="kpi-value" style="color:var(--red)">3.9%</div>
+    <div class="kpi-sub">target: 80% &nbsp;·&nbsp; training residuals too small</div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-label">Quantile Reg 80% Coverage</div>
+    <div class="kpi-value" style="color:var(--green)">53.3%</div>
+    <div class="kpi-sub">best config: n_est=100 depth=4 lr=0.05</div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-label">Coverage Gain</div>
+    <div class="kpi-value" style="color:var(--green)">
+      ▲49.5pp</div>
+    <div class="kpi-sub">percentage points improvement</div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-label">Bootstrap CRPS</div>
+    <div class="kpi-value" style="color:var(--peach)">40.901</div>
+    <div class="kpi-sub">current model_lib default</div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-label">Best Quantile CRPS</div>
+    <div class="kpi-value" style="color:var(--green)">
+      27.827</div>
+    <div class="kpi-sub"><span style="color:var(--green)">▼ 13.07</span> vs bootstrap</div>
+  </div>
+</div>
+
+<div class="section-label">Coverage & CRPS by Hyperparameters</div>
+<div class="grid grid-2">
+  <div class="card">
+    <div class="card-title"><span class="dot" style="background:var(--teal)"></span>
+      80% Coverage vs n_estimators (per depth, best lr)</div>
+    <canvas id="covEstChart"></canvas>
+  </div>
+  <div class="card">
+    <div class="card-title"><span class="dot" style="background:var(--mauve)"></span>
+      CRPS vs n_estimators (per depth, best lr)</div>
+    <canvas id="crpsEstChart"></canvas>
+  </div>
+</div>
+
+<div class="section-label">Per-District: Bootstrap vs Best Quantile Config</div>
+<div class="grid grid-2">
+  <div class="card">
+    <div class="card-title"><span class="dot" style="background:var(--blue)"></span>
+      CRPS per district — bootstrap vs quantile</div>
+    <canvas id="distCrpsChart"></canvas>
+  </div>
+  <div class="card">
+    <div class="card-title"><span class="dot" style="background:var(--green)"></span>
+      80% Coverage per district — bootstrap vs quantile</div>
+    <canvas id="distCovChart"></canvas>
+  </div>
+</div>
+
+<div class="section-label">Top 5 Quantile Regression Configs</div>
+<div class="card" style="overflow:auto">
+  <table>
+    <thead>
+      <tr>
+        <th>#</th><th>n_estimators</th><th>max_depth</th><th>learning_rate</th>
+        <th>avg CRPS</th><th>avg RMSE</th><th>80% cov</th>
+        <th>CRPS vs bootstrap</th><th>cov80 vs bootstrap</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr style="background:#8839ef0a;font-weight:600">
+          <td style="font-weight:700;color:var(--mauve)">1 ★</td>
+          <td style="font-family:'JetBrains Mono',monospace">100</td>
+          <td style="font-family:'JetBrains Mono',monospace">4</td>
+          <td style="font-family:'JetBrains Mono',monospace">0.05</td>
+          <td style="font-family:'JetBrains Mono',monospace">27.827</td>
+          <td style="font-family:'JetBrains Mono',monospace">50.931</td>
+          <td style="font-family:'JetBrains Mono',monospace">53.3%</td>
+          <td><span style="color:var(--green)">▼ 13.07</span></td>
+          <td><span style="color:var(--green)">▲ 49.50</span></td>
+        </tr>
+        <tr style="">
+          <td style="font-weight:700;color:var(--mauve)">2</td>
+          <td style="font-family:'JetBrains Mono',monospace">100</td>
+          <td style="font-family:'JetBrains Mono',monospace">3</td>
+          <td style="font-family:'JetBrains Mono',monospace">0.05</td>
+          <td style="font-family:'JetBrains Mono',monospace">27.832</td>
+          <td style="font-family:'JetBrains Mono',monospace">51.182</td>
+          <td style="font-family:'JetBrains Mono',monospace">58.2%</td>
+          <td><span style="color:var(--green)">▼ 13.07</span></td>
+          <td><span style="color:var(--green)">▲ 54.40</span></td>
+        </tr>
+        <tr style="">
+          <td style="font-weight:700;color:var(--mauve)">3</td>
+          <td style="font-family:'JetBrains Mono',monospace">100</td>
+          <td style="font-family:'JetBrains Mono',monospace">5</td>
+          <td style="font-family:'JetBrains Mono',monospace">0.05</td>
+          <td style="font-family:'JetBrains Mono',monospace">27.947</td>
+          <td style="font-family:'JetBrains Mono',monospace">51.141</td>
+          <td style="font-family:'JetBrains Mono',monospace">52.2%</td>
+          <td><span style="color:var(--green)">▼ 12.95</span></td>
+          <td><span style="color:var(--green)">▲ 48.40</span></td>
+        </tr>
+        <tr style="">
+          <td style="font-weight:700;color:var(--mauve)">4</td>
+          <td style="font-family:'JetBrains Mono',monospace">100</td>
+          <td style="font-family:'JetBrains Mono',monospace">3</td>
+          <td style="font-family:'JetBrains Mono',monospace">0.1</td>
+          <td style="font-family:'JetBrains Mono',monospace">28.678</td>
+          <td style="font-family:'JetBrains Mono',monospace">51.717</td>
+          <td style="font-family:'JetBrains Mono',monospace">50.0%</td>
+          <td><span style="color:var(--green)">▼ 12.22</span></td>
+          <td><span style="color:var(--green)">▲ 46.10</span></td>
+        </tr>
+        <tr style="">
+          <td style="font-weight:700;color:var(--mauve)">5</td>
+          <td style="font-family:'JetBrains Mono',monospace">200</td>
+          <td style="font-family:'JetBrains Mono',monospace">3</td>
+          <td style="font-family:'JetBrains Mono',monospace">0.05</td>
+          <td style="font-family:'JetBrains Mono',monospace">28.716</td>
+          <td style="font-family:'JetBrains Mono',monospace">51.453</td>
+          <td style="font-family:'JetBrains Mono',monospace">48.4%</td>
+          <td><span style="color:var(--green)">▼ 12.19</span></td>
+          <td><span style="color:var(--green)">▲ 44.50</span></td>
+        </tr></tbody>
+  </table>
+</div>
+
+<div class="section-label">Per-District Detail</div>
+<div class="card" style="overflow:auto">
+  <table>
+    <thead>
+      <tr>
+        <th>District</th>
+        <th>CRPS (bootstrap)</th><th>CRPS (quantile)</th><th>CRPS delta</th>
+        <th>cov80 (bootstrap)</th><th>cov80 (quantile)</th><th>cov80 delta</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><strong>Hamahamet-Mboinkou</strong></td>
+          <td style="font-family:'JetBrains Mono',monospace">33.50</td>
+          <td style="font-family:'JetBrains Mono',monospace">23.75</td>
+          <td style="font-family:'JetBrains Mono',monospace;color:var(--green)">
+            ▼ 9.75</td>
+          <td style="font-family:'JetBrains Mono',monospace">0.0%</td>
+          <td style="font-family:'JetBrains Mono',monospace">50.0%</td>
+          <td style="font-family:'JetBrains Mono',monospace;color:var(--green)">
+            ▲ 50.0pp</td>
+        </tr>
+        <tr>
+          <td><strong>Hambou</strong></td>
+          <td style="font-family:'JetBrains Mono',monospace">29.38</td>
+          <td style="font-family:'JetBrains Mono',monospace">15.34</td>
+          <td style="font-family:'JetBrains Mono',monospace;color:var(--green)">
+            ▼ 14.03</td>
+          <td style="font-family:'JetBrains Mono',monospace">7.7%</td>
+          <td style="font-family:'JetBrains Mono',monospace">42.3%</td>
+          <td style="font-family:'JetBrains Mono',monospace;color:var(--green)">
+            ▲ 34.6pp</td>
+        </tr>
+        <tr>
+          <td><strong>Mbadjini Est</strong></td>
+          <td style="font-family:'JetBrains Mono',monospace">51.38</td>
+          <td style="font-family:'JetBrains Mono',monospace">40.35</td>
+          <td style="font-family:'JetBrains Mono',monospace;color:var(--green)">
+            ▼ 11.02</td>
+          <td style="font-family:'JetBrains Mono',monospace">3.9%</td>
+          <td style="font-family:'JetBrains Mono',monospace">53.8%</td>
+          <td style="font-family:'JetBrains Mono',monospace;color:var(--green)">
+            ▲ 50.0pp</td>
+        </tr>
+        <tr>
+          <td><strong>Mbadjini Ouest</strong></td>
+          <td style="font-family:'JetBrains Mono',monospace">27.63</td>
+          <td style="font-family:'JetBrains Mono',monospace">20.74</td>
+          <td style="font-family:'JetBrains Mono',monospace;color:var(--green)">
+            ▼ 6.89</td>
+          <td style="font-family:'JetBrains Mono',monospace">7.7%</td>
+          <td style="font-family:'JetBrains Mono',monospace">34.6%</td>
+          <td style="font-family:'JetBrains Mono',monospace;color:var(--green)">
+            ▲ 26.9pp</td>
+        </tr>
+        <tr>
+          <td><strong>Mitsamiouli-Mboudé</strong></td>
+          <td style="font-family:'JetBrains Mono',monospace">32.20</td>
+          <td style="font-family:'JetBrains Mono',monospace">16.99</td>
+          <td style="font-family:'JetBrains Mono',monospace;color:var(--green)">
+            ▼ 15.21</td>
+          <td style="font-family:'JetBrains Mono',monospace">3.9%</td>
+          <td style="font-family:'JetBrains Mono',monospace">88.5%</td>
+          <td style="font-family:'JetBrains Mono',monospace;color:var(--green)">
+            ▲ 84.6pp</td>
+        </tr>
+        <tr>
+          <td><strong>Moroni-Bambao</strong></td>
+          <td style="font-family:'JetBrains Mono',monospace">83.95</td>
+          <td style="font-family:'JetBrains Mono',monospace">56.26</td>
+          <td style="font-family:'JetBrains Mono',monospace;color:var(--green)">
+            ▼ 27.69</td>
+          <td style="font-family:'JetBrains Mono',monospace">3.9%</td>
+          <td style="font-family:'JetBrains Mono',monospace">76.9%</td>
+          <td style="font-family:'JetBrains Mono',monospace;color:var(--green)">
+            ▲ 73.1pp</td>
+        </tr>
+        <tr>
+          <td><strong>Oichili-Dimani</strong></td>
+          <td style="font-family:'JetBrains Mono',monospace">28.29</td>
+          <td style="font-family:'JetBrains Mono',monospace">21.35</td>
+          <td style="font-family:'JetBrains Mono',monospace;color:var(--green)">
+            ▼ 6.93</td>
+          <td style="font-family:'JetBrains Mono',monospace">0.0%</td>
+          <td style="font-family:'JetBrains Mono',monospace">26.9%</td>
+          <td style="font-family:'JetBrains Mono',monospace;color:var(--green)">
+            ▲ 26.9pp</td>
+        </tr></tbody>
+  </table>
+</div>
+
+<div class="section-label">Findings</div>
+<div class="finding">
+  <strong>Calibration fix:</strong> Replacing residual bootstrap with quantile regression
+  brings 80% coverage from 3.9% to 53.3%
+  — a gain of 49.5 percentage points. The root cause of the original
+  failure was XGBoost overfitting the training data: in-sample residuals were near zero,
+  so bootstrapped intervals collapsed to near-point-predictions.
+  <br><br>
+  <strong>How quantile regression fixes this:</strong> Instead of adding noise from
+  training errors, the model learns the <em>conditional quantile function</em> directly —
+  i.e., how wide the prediction interval should be given the current covariate values.
+  With 25 quantile levels (0.025 to 0.975), samples are drawn by uniform
+  interpolation across the predicted distribution, properly capturing covariate-dependent
+  uncertainty.
+  <br><br>
+  <strong>Best config:</strong> n_estimators=100, max_depth=4,
+  learning_rate=0.05 — saved to <code>exp05_best_config.json</code> for use in
+  Experiment 06 (improved ensemble).
+</div>
+<div class="rec-box">
+  <strong>Next — Experiment 06:</strong> Rebuild the Ensemble (S+P+X) using
+  informed features (Exp 03, |r|&gt;0.10), tuned Prophet (Exp 04: cps=0.1 sps=2.0 multiplicative),
+  and this quantile-regression XGBoost (best config above). Compare vs the original ensemble.
+</div>
+
+<script>
+const P = {"bootstrap": {"avg_crps": 40.901, "avg_rmse": 57.723, "avg_cov80": 0.0385, "dist_crps": [33.496, 29.378, 51.375, 27.63, 32.197, 83.95, 28.286], "dist_cov80": [0.0, 0.0769, 0.0385, 0.0769, 0.0385, 0.0385, 0.0], "districts": ["Hamahamet-Mboinkou", "Hambou", "Mbadjini Est", "Mbadjini Ouest", "Mitsamiouli-Mboud\u00e9", "Moroni-Bambao", "Oichili-Dimani"]}, "grid": [{"avg_crps": 27.832, "avg_rmse": 51.182, "avg_cov80": 0.5824, "n_est": 100, "depth": 3, "lr": 0.05}, {"avg_crps": 28.678, "avg_rmse": 51.717, "avg_cov80": 0.5, "n_est": 100, "depth": 3, "lr": 0.1}, {"avg_crps": 27.827, "avg_rmse": 50.931, "avg_cov80": 0.533, "n_est": 100, "depth": 4, "lr": 0.05}, {"avg_crps": 28.737, "avg_rmse": 51.493, "avg_cov80": 0.489, "n_est": 100, "depth": 4, "lr": 0.1}, {"avg_crps": 27.947, "avg_rmse": 51.141, "avg_cov80": 0.522, "n_est": 100, "depth": 5, "lr": 0.05}, {"avg_crps": 28.73, "avg_rmse": 51.366, "avg_cov80": 0.489, "n_est": 100, "depth": 5, "lr": 0.1}, {"avg_crps": 28.716, "avg_rmse": 51.453, "avg_cov80": 0.4835, "n_est": 200, "depth": 3, "lr": 0.05}, {"avg_crps": 29.344, "avg_rmse": 52.116, "avg_cov80": 0.467, "n_est": 200, "depth": 3, "lr": 0.1}, {"avg_crps": 28.798, "avg_rmse": 51.205, "avg_cov80": 0.4615, "n_est": 200, "depth": 4, "lr": 0.05}, {"avg_crps": 29.511, "avg_rmse": 52.172, "avg_cov80": 0.4505, "n_est": 200, "depth": 4, "lr": 0.1}, {"avg_crps": 29.048, "avg_rmse": 51.465, "avg_cov80": 0.4451, "n_est": 200, "depth": 5, "lr": 0.05}, {"avg_crps": 29.274, "avg_rmse": 51.808, "avg_cov80": 0.4615, "n_est": 200, "depth": 5, "lr": 0.1}, {"avg_crps": 29.167, "avg_rmse": 51.789, "avg_cov80": 0.4615, "n_est": 300, "depth": 3, "lr": 0.05}, {"avg_crps": 29.775, "avg_rmse": 52.531, "avg_cov80": 0.4505, "n_est": 300, "depth": 3, "lr": 0.1}, {"avg_crps": 29.316, "avg_rmse": 51.59, "avg_cov80": 0.4505, "n_est": 300, "depth": 4, "lr": 0.05}, {"avg_crps": 29.87, "avg_rmse": 52.52, "avg_cov80": 0.4341, "n_est": 300, "depth": 4, "lr": 0.1}, {"avg_crps": 29.52, "avg_rmse": 51.873, "avg_cov80": 0.4286, "n_est": 300, "depth": 5, "lr": 0.05}, {"avg_crps": 29.627, "avg_rmse": 52.145, "avg_cov80": 0.456, "n_est": 300, "depth": 5, "lr": 0.1}, {"avg_crps": 29.802, "avg_rmse": 52.241, "avg_cov80": 0.4286, "n_est": 500, "depth": 3, "lr": 0.05}, {"avg_crps": 30.217, "avg_rmse": 52.971, "avg_cov80": 0.4231, "n_est": 500, "depth": 3, "lr": 0.1}, {"avg_crps": 29.889, "avg_rmse": 52.107, "avg_cov80": 0.4231, "n_est": 500, "depth": 4, "lr": 0.05}, {"avg_crps": 30.429, "avg_rmse": 53.083, "avg_cov80": 0.4121, "n_est": 500, "depth": 4, "lr": 0.1}, {"avg_crps": 29.993, "avg_rmse": 52.193, "avg_cov80": 0.4066, "n_est": 500, "depth": 5, "lr": 0.05}, {"avg_crps": 30.037, "avg_rmse": 52.593, "avg_cov80": 0.4341, "n_est": 500, "depth": 5, "lr": 0.1}], "best": {"avg_crps": 27.827, "avg_rmse": 50.931, "avg_cov80": 0.533, "n_est": 100, "depth": 4, "lr": 0.05}, "top5": [{"avg_crps": 27.827, "avg_rmse": 50.931, "avg_cov80": 0.533, "n_est": 100, "depth": 4, "lr": 0.05}, {"avg_crps": 27.832, "avg_rmse": 51.182, "avg_cov80": 0.5824, "n_est": 100, "depth": 3, "lr": 0.05}, {"avg_crps": 27.947, "avg_rmse": 51.141, "avg_cov80": 0.522, "n_est": 100, "depth": 5, "lr": 0.05}, {"avg_crps": 28.678, "avg_rmse": 51.717, "avg_cov80": 0.5, "n_est": 100, "depth": 3, "lr": 0.1}, {"avg_crps": 28.716, "avg_rmse": 51.453, "avg_cov80": 0.4835, "n_est": 200, "depth": 3, "lr": 0.05}], "dist_bootstrap_cov": [["Hamahamet-Mboinkou", 0.0], ["Hambou", 0.0769], ["Mbadjini Est", 0.0385], ["Mbadjini Ouest", 0.0769], ["Mitsamiouli-Mboud\u00e9", 0.0385], ["Moroni-Bambao", 0.0385], ["Oichili-Dimani", 0.0]], "dist_best_cov": [["Hamahamet-Mboinkou", 0.5], ["Hambou", 0.4231], ["Mbadjini Est", 0.5385], ["Mbadjini Ouest", 0.3462], ["Mitsamiouli-Mboud\u00e9", 0.8846], ["Moroni-Bambao", 0.7692], ["Oichili-Dimani", 0.2692]], "dist_bootstrap_crps": [["Hamahamet-Mboinkou", 33.496], ["Hambou", 29.378], ["Mbadjini Est", 51.375], ["Mbadjini Ouest", 27.63], ["Mitsamiouli-Mboud\u00e9", 32.197], ["Moroni-Bambao", 83.95], ["Oichili-Dimani", 28.286]], "dist_best_crps": [["Hamahamet-Mboinkou", 23.749], ["Hambou", 15.344], ["Mbadjini Est", 40.355], ["Mbadjini Ouest", 20.736], ["Mitsamiouli-Mboud\u00e9", 16.991], ["Moroni-Bambao", 56.26], ["Oichili-Dimani", 21.353]], "districts": ["Hamahamet-Mboinkou", "Hambou", "Mbadjini Est", "Mbadjini Ouest", "Mitsamiouli-Mboud\u00e9", "Moroni-Bambao", "Oichili-Dimani"], "n_est_values": [100, 200, 300, 500], "depth_values": [3, 4, 5], "lr_values": [0.05, 0.1], "n_quantiles": 25};
+
+// Build lookup: (n_est, depth, lr) -> metrics
+const lookup = {};
+P.grid.forEach(r => {
+  lookup[`${r.n_est}_${r.depth}_${r.lr}`] = r;
+});
+
+const DEPTHS  = P.depth_values;
+const N_ESTS  = P.n_est_values;
+const DEPTH_COLORS = ["#8839ef","#1e66f5","#179299"];
+
+// For each (depth, n_est) take best lr
+function bestByLr(n_est, depth, metric) {
+  return Math.min(...P.lr_values.map(lr => lookup[`${n_est}_${depth}_${lr}`]?.[metric] ?? 999));
+}
+function bestCovByLr(n_est, depth) {
+  return Math.max(...P.lr_values.map(lr => lookup[`${n_est}_${depth}_${lr}`]?.avg_cov80 ?? 0));
+}
+
+function lineChart(id, yFn, yLabel, isPercent) {
+  const datasets = DEPTHS.map((d, di) => ({
+    label: `depth=${d}`,
+    data: N_ESTS.map(n => isPercent ? +(yFn(n, d) * 100).toFixed(1) : yFn(n, d)),
+    borderColor: DEPTH_COLORS[di],
+    backgroundColor: DEPTH_COLORS[di] + "22",
+    fill: false, tension: 0.35,
+    pointRadius: 5, pointBorderColor: "#fff", pointBorderWidth: 2,
+    pointBackgroundColor: DEPTH_COLORS[di],
+  }));
+
+  const extras = isPercent ? [
+    { label:"baseline bootstrap", data:Array(N_ESTS.length).fill(+(P.bootstrap.avg_cov80*100).toFixed(1)),
+       borderColor:"#a099bb", borderDash:[5,4], pointRadius:0, fill:false },
+    { label:"target 80%", data:Array(N_ESTS.length).fill(80),
+       borderColor:"#40a02b88", borderDash:[3,3], pointRadius:0, fill:false },
+  ] : [
+    { label:"bootstrap baseline", data:Array(N_ESTS.length).fill(P.bootstrap.avg_crps),
+       borderColor:"#a099bb", borderDash:[5,4], pointRadius:0, fill:false },
+  ];
+
+  new Chart(document.getElementById(id), {
+    type: "line",
+    data: { labels: N_ESTS.map(String), datasets: [...datasets, ...extras] },
+    options: {
+      responsive:true, maintainAspectRatio:true,
+      plugins:{ legend:{ position:"top", labels:{ font:{size:10}, boxWidth:10 } } },
+      scales:{
+        x:{ title:{display:true,text:"n_estimators",font:{size:10}},
+             type:"category", ticks:{font:{size:10}}, grid:{display:false} },
+        y:{ title:{display:true,text:yLabel,font:{size:10}},
+             ticks:{font:{size:10}}, grid:{color:"#8839ef0a"} }
+      }
+    }
+  });
+}
+
+lineChart("covEstChart",  (n, d) => bestCovByLr(n, d), "80% Coverage (%)", true);
+lineChart("crpsEstChart", (n, d) => bestByLr(n, d, "avg_crps"), "avg CRPS", false);
+
+// Per-district bar charts
+const DISTS  = P.districts.map(d => d.replace("Mitsamiouli-Mboude", "Mitsamiouli"));
+const crps_bl  = P.dist_bootstrap_crps.map(x => x[1]);
+const crps_bst = P.dist_best_crps.map(x => x[1]);
+const cov_bl   = P.dist_bootstrap_cov.map(x => +(x[1]*100).toFixed(1));
+const cov_bst  = P.dist_best_cov.map(x => +(x[1]*100).toFixed(1));
+
+function barChart(id, labels, ds1, ds2, label1, label2, c1, c2) {
+  new Chart(document.getElementById(id), {
+    type:"bar",
+    data:{ labels, datasets:[
+      { label:label1, data:ds1, backgroundColor:c1+"cc", borderRadius:4 },
+      { label:label2, data:ds2, backgroundColor:c2+"cc", borderRadius:4 },
+    ]},
+    options:{
+      responsive:true, maintainAspectRatio:true,
+      plugins:{ legend:{ position:"top", labels:{ font:{size:10}, boxWidth:10 } } },
+      scales:{
+        x:{ ticks:{font:{size:10},maxRotation:30}, grid:{display:false} },
+        y:{ ticks:{font:{size:10}}, grid:{color:"#8839ef0a"} }
+      }
+    }
+  });
+}
+
+barChart("distCrpsChart", DISTS, crps_bl, crps_bst,
+         "Bootstrap CRPS", "Quantile CRPS", "#fe640b", "#40a02b");
+barChart("distCovChart", DISTS, cov_bl, cov_bst,
+         "Bootstrap cov80%", "Quantile cov80%", "#fe640b", "#1e66f5");
+</script>
+</body>
+</html>
