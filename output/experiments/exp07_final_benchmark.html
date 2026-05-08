@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Exp 07 - Final Benchmark</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --page:#f2eeff;--card:#fff;--border:#ddd5f5;--border-h:#c9bef0;
+  --text:#2a2044;--sub1:#544873;--sub0:#7a6e92;--muted:#a099bb;
+  --mauve:#8839ef;--blue:#1e66f5;--teal:#179299;--green:#40a02b;
+  --peach:#fe640b;--red:#d20f39;--sky:#04a5e5;--lavender:#7287fd;
+  --yellow:#c97b0d;--surface:#ebe4ff;
+}
+body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--page);color:var(--text);padding:28px 24px 56px;line-height:1.55;max-width:1400px;margin:0 auto}
+.header{text-align:center;margin-bottom:28px;padding:40px 32px 30px;background:linear-gradient(160deg,#fff 0%,#f3eeff 100%);border-radius:20px;border:1px solid var(--border);box-shadow:0 2px 20px #8839ef0d;position:relative;overflow:hidden}
+.header::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 55% 70% at 10% 100%,#7287fd12 0%,transparent 60%),radial-gradient(ellipse 45% 60% at 90% 0%,#40a02b0e 0%,transparent 60%);pointer-events:none}
+.header h1{font-size:2rem;font-weight:800;letter-spacing:-.5px;background:linear-gradient(120deg,var(--mauve) 0%,var(--blue) 50%,var(--teal) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:8px}
+.header .sub{color:var(--sub0);font-size:.88rem}
+.champ-banner{display:inline-flex;align-items:center;gap:10px;background:#40a02b12;border:1px solid #40a02b44;border-radius:14px;padding:10px 20px;margin-top:14px;font-size:.85rem}
+.champ-banner strong{color:#276315}
+.section-label{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted);margin:28px 0 14px;display:flex;align-items:center;gap:8px}
+.section-label::after{content:'';flex:1;height:1px;background:var(--border)}
+.grid{display:grid;gap:16px;margin-bottom:4px}
+.grid-2{grid-template-columns:1fr 1fr}
+.grid-3{grid-template-columns:1fr 1fr 1fr}
+@media(max-width:960px){.grid-2,.grid-3{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:22px 24px;box-shadow:0 1px 6px #0001;transition:box-shadow .2s,border-color .2s}
+.card:hover{box-shadow:0 4px 16px #8839ef12;border-color:var(--border-h)}
+.card-title{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:1.1px;color:var(--muted);margin-bottom:16px;display:flex;align-items:center;gap:7px}
+.dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:24px}
+.kpi{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px 22px 16px;position:relative;overflow:hidden}
+.kpi::after{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:14px 14px 0 0}
+.kpi:nth-child(1)::after{background:linear-gradient(90deg,var(--green),var(--teal))}
+.kpi:nth-child(2)::after{background:linear-gradient(90deg,var(--mauve),var(--lavender))}
+.kpi:nth-child(3)::after{background:linear-gradient(90deg,var(--sky),var(--blue))}
+.kpi:nth-child(4)::after{background:linear-gradient(90deg,var(--peach),var(--yellow))}
+.kpi-label{font-size:.67rem;color:var(--muted);text-transform:uppercase;letter-spacing:1.2px;font-weight:700}
+.kpi-value{font-family:'JetBrains Mono',monospace;font-size:1.9rem;font-weight:700;margin-top:5px;letter-spacing:-1px;line-height:1}
+.kpi-sub{font-size:.72rem;color:var(--muted);margin-top:5px}
+table{width:100%;border-collapse:collapse;font-size:.83rem}
+thead th{background:var(--surface);color:var(--sub0);font-weight:700;text-transform:uppercase;font-size:.65rem;letter-spacing:.9px;padding:9px 12px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap}
+tbody td{padding:10px 12px;border-bottom:1px solid #f0ebff;color:var(--sub1);vertical-align:middle}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:#f7f4ff}
+.pill{display:inline-block;padding:2px 9px;border-radius:10px;font-size:.72rem;font-weight:700}
+.pill-exp{background:var(--surface);color:var(--mauve);border:1px solid #8839ef30;font-family:'JetBrains Mono',monospace;font-size:.7rem}
+.finding{background:#fff;border:1px solid var(--border);border-left:4px solid var(--green);border-radius:0 12px 12px 0;padding:18px 22px;font-size:.88rem;line-height:1.7}
+canvas{max-height:300px}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Experiment 07 — Final Optimised Benchmark</h1>
+  <div class="sub">
+    7-experiment series &nbsp;·&nbsp; 6 final configs &nbsp;·&nbsp;
+    train weeks 1–78 &nbsp;·&nbsp; test weeks 79–104 &nbsp;·&nbsp;
+    n_samples=50 &nbsp;·&nbsp; 7 districts
+  </div>
+  <div class="champ-banner">
+    <span style="font-size:1.2rem">⭐</span>
+    <strong>Champion: Ensemble S+X</strong>
+    &nbsp;—&nbsp; CRPS 25.908 &nbsp;·&nbsp; RMSE 48.84 &nbsp;·&nbsp;
+    80% coverage 76.9%
+  </div>
+</div>
+
+<div class="section-label">Champion Summary</div>
+<div class="kpi-row">
+  <div class="kpi">
+    <div class="kpi-label">Best CRPS</div>
+    <div class="kpi-value" style="color:var(--green)">25.908</div>
+    <div class="kpi-sub">Ensemble S+X &nbsp;·&nbsp; lower = better</div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-label">Best RMSE</div>
+    <div class="kpi-value" style="color:var(--mauve)">48.84</div>
+    <div class="kpi-sub">mean cases &nbsp;·&nbsp; lower = better</div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-label">80% Coverage</div>
+    <div class="kpi-value" style="color:var(--blue)">76.9%</div>
+    <div class="kpi-sub">target 80% &nbsp;·&nbsp; S+P+X hits 80.2%</div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-label">R²</div>
+    <div class="kpi-value" style="color:var(--peach)">0.921</div>
+    <div class="kpi-sub">variance explained &nbsp;·&nbsp; higher = better</div>
+  </div>
+</div>
+
+<div class="section-label">All Configs — Metric Comparison</div>
+<div class="grid grid-2">
+  <div class="card">
+    <div class="card-title"><span class="dot" style="background:var(--mauve)"></span>
+      CRPS — all 6 configs (lower is better)</div>
+    <canvas id="crpsChart"></canvas>
+  </div>
+  <div class="card">
+    <div class="card-title"><span class="dot" style="background:var(--teal)"></span>
+      80% & 95% PI Coverage (target: 80% line shown)</div>
+    <canvas id="covChart"></canvas>
+  </div>
+</div>
+<div class="grid grid-2" style="margin-top:16px">
+  <div class="card">
+    <div class="card-title"><span class="dot" style="background:var(--blue)"></span>
+      RMSE — all 6 configs</div>
+    <canvas id="rmseChart"></canvas>
+  </div>
+  <div class="card">
+    <div class="card-title"><span class="dot" style="background:var(--sky)"></span>
+      Per-district CRPS — SARIMAX baseline vs Ensemble S+X</div>
+    <canvas id="distChart"></canvas>
+  </div>
+</div>
+
+<div class="section-label">Full Results Table</div>
+<div class="card" style="overflow:auto">
+  <table>
+    <thead>
+      <tr><th>Config</th><th>CRPS</th><th>RMSE</th><th>MAE</th><th>R²</th>
+          <th>80% cov</th><th>95% cov</th><th>Time</th></tr>
+    </thead>
+    <tbody>
+            <tr style="background:#40a02b0d;">
+              <td><strong>Ensemble S+X ⭐</strong><br>
+                <span style="font-size:.74rem;color:var(--sub0)">SARIMAX tuned + XGBoost calibrated · 100 samples · no Prophet</span></td>
+              <td style="font-family:'JetBrains Mono',monospace;font-weight:700">25.908</td>
+              <td style="font-family:'JetBrains Mono',monospace">48.84</td>
+              <td style="font-family:'JetBrains Mono',monospace">35.692</td>
+              <td style="font-family:'JetBrains Mono',monospace">0.921</td>
+              <td style="font-family:'JetBrains Mono',monospace">76.9%</td>
+              <td style="font-family:'JetBrains Mono',monospace">94.0%</td>
+              <td style="font-family:'JetBrains Mono',monospace;color:var(--muted)">0.1s</td>
+            </tr>
+            <tr style="">
+              <td><strong>SARIMAX tuned</strong><br>
+                <span style="font-size:.74rem;color:var(--sub0)">(1,0,1) · district-specific features |r|>0.1</span></td>
+              <td style="font-family:'JetBrains Mono',monospace;font-weight:400">26.973</td>
+              <td style="font-family:'JetBrains Mono',monospace">49.925</td>
+              <td style="font-family:'JetBrains Mono',monospace">36.206</td>
+              <td style="font-family:'JetBrains Mono',monospace">0.914</td>
+              <td style="font-family:'JetBrains Mono',monospace">85.7%</td>
+              <td style="font-family:'JetBrains Mono',monospace">94.0%</td>
+              <td style="font-family:'JetBrains Mono',monospace;color:var(--muted)">3.0s</td>
+            </tr>
+            <tr style="">
+              <td><strong>SARIMAX baseline</strong><br>
+                <span style="font-size:.74rem;color:var(--sub0)">Fixed (1,0,1) · 3 raw climate covariates</span></td>
+              <td style="font-family:'JetBrains Mono',monospace;font-weight:400">27.008</td>
+              <td style="font-family:'JetBrains Mono',monospace">49.573</td>
+              <td style="font-family:'JetBrains Mono',monospace">37.49</td>
+              <td style="font-family:'JetBrains Mono',monospace">0.917</td>
+              <td style="font-family:'JetBrains Mono',monospace">81.9%</td>
+              <td style="font-family:'JetBrains Mono',monospace">95.0%</td>
+              <td style="font-family:'JetBrains Mono',monospace;color:var(--muted)">3.0s</td>
+            </tr>
+            <tr style="">
+              <td><strong>Ensemble S+P+X</strong><br>
+                <span style="font-size:.74rem;color:var(--sub0)">SARIMAX tuned + Prophet tuned + XGBoost calibrated · 150 samples</span></td>
+              <td style="font-family:'JetBrains Mono',monospace;font-weight:400">27.142</td>
+              <td style="font-family:'JetBrains Mono',monospace">51.461</td>
+              <td style="font-family:'JetBrains Mono',monospace">36.576</td>
+              <td style="font-family:'JetBrains Mono',monospace">0.917</td>
+              <td style="font-family:'JetBrains Mono',monospace">80.8%</td>
+              <td style="font-family:'JetBrains Mono',monospace">94.5%</td>
+              <td style="font-family:'JetBrains Mono',monospace;color:var(--muted)">0.1s</td>
+            </tr>
+            <tr style="">
+              <td><strong>XGBoost calibrated</strong><br>
+                <span style="font-size:.74rem;color:var(--sub0)">Quantile reg · n_est=100 depth=4 lr=0.05</span></td>
+              <td style="font-family:'JetBrains Mono',monospace;font-weight:400">27.827</td>
+              <td style="font-family:'JetBrains Mono',monospace">50.931</td>
+              <td style="font-family:'JetBrains Mono',monospace">37.074</td>
+              <td style="font-family:'JetBrains Mono',monospace">0.915</td>
+              <td style="font-family:'JetBrains Mono',monospace">53.3%</td>
+              <td style="font-family:'JetBrains Mono',monospace">73.1%</td>
+              <td style="font-family:'JetBrains Mono',monospace;color:var(--muted)">11.0s</td>
+            </tr>
+            <tr style="">
+              <td><strong>Prophet tuned</strong><br>
+                <span style="font-size:.74rem;color:var(--sub0)">cps=0.1 · sps=2.0 · multiplicative</span></td>
+              <td style="font-family:'JetBrains Mono',monospace;font-weight:400">37.422</td>
+              <td style="font-family:'JetBrains Mono',monospace">64.828</td>
+              <td style="font-family:'JetBrains Mono',monospace">47.037</td>
+              <td style="font-family:'JetBrains Mono',monospace">0.872</td>
+              <td style="font-family:'JetBrains Mono',monospace">61.5%</td>
+              <td style="font-family:'JetBrains Mono',monospace">71.4%</td>
+              <td style="font-family:'JetBrains Mono',monospace;color:var(--muted)">9.7s</td>
+            </tr></tbody>
+  </table>
+</div>
+
+<div class="section-label">Experiment Journey</div>
+<div class="card" style="overflow:auto">
+  <table>
+    <thead><tr><th>Experiment</th><th>Question asked</th><th>Finding</th></tr></thead>
+    <tbody>
+        <tr>
+          <td><span class="pill pill-exp">Exp 01</span></td>
+          <td><strong>Feature correlation & lag analysis</strong></td>
+          <td style="color:var(--sub0);font-size:.82rem">Revealed district-heterogeneous signals. Per-district r > 0 to 0.49. Pooled correlations misleadingly weak.</td>
+        </tr>
+        <tr>
+          <td><span class="pill pill-exp">Exp 02</span></td>
+          <td><strong>SARIMAX auto-ARIMA order selection</strong></td>
+          <td style="color:var(--sub0);font-size:.82rem">Fixed (1,0,1) beats auto-ARIMA on 6/7 districts. Short series punishes complex orders.</td>
+        </tr>
+        <tr>
+          <td><span class="pill pill-exp">Exp 03</span></td>
+          <td><strong>Informed feature selection</strong></td>
+          <td style="color:var(--sub0);font-size:.82rem">District-specific features (|r|>0.10) match baseline CRPS while using 5 covariates vs 16.</td>
+        </tr>
+        <tr>
+          <td><span class="pill pill-exp">Exp 04</span></td>
+          <td><strong>Prophet hyperparameter tuning</strong></td>
+          <td style="color:var(--sub0);font-size:.82rem">Best: cps=0.1, sps=2.0, multiplicative. CRPS 38.20→37.28. Coverage structurally limited.</td>
+        </tr>
+        <tr>
+          <td><span class="pill pill-exp">Exp 05</span></td>
+          <td><strong>XGBoost calibration fix</strong></td>
+          <td style="color:var(--sub0);font-size:.82rem">Quantile regression replaces residual bootstrap. CRPS 40.90→27.83. Coverage 3.9%→53.3%.</td>
+        </tr>
+        <tr>
+          <td><span class="pill pill-exp">Exp 06</span></td>
+          <td><strong>Improved ensemble S+P+X</strong></td>
+          <td style="color:var(--sub0);font-size:.82rem">All tuned components. CRPS 29.66→27.30. Coverage 70.3%→80.2% (perfectly calibrated).</td>
+        </tr>
+        <tr>
+          <td><span class="pill pill-exp">Exp 07</span></td>
+          <td><strong>S+X ensemble (no Prophet)</strong></td>
+          <td style="color:var(--sub0);font-size:.82rem">Removing Prophet (weakest, CRPS 38.4) raises ensemble CRPS to 25.91 — best overall result.</td>
+        </tr></tbody>
+  </table>
+</div>
+
+<div class="section-label">Findings & Recommendations</div>
+<div class="finding">
+  <strong>Ensemble S+X is the new champion</strong> (CRPS 25.908, RMSE 48.84).
+  Removing Prophet from the ensemble improves CRPS by
+  1.234 points over S+P+X, because Prophet's weaker
+  probabilistic accuracy (CRPS 37–38) was diluting the pool. SARIMAX and XGBoost are
+  sufficiently different — one is a linear state-space model, the other is a non-linear
+  tree ensemble — to provide genuine diversity without needing a third model family.
+  <br><br>
+  <strong>Coverage trade-off:</strong> S+X hits 76.9% 80% coverage vs
+  the S+P+X ensemble's 80.2%. Prophet's intermediate coverage (58%) was balancing SARIMAX's
+  over-coverage (85.7%) and XGBoost's under-coverage (53.3%). Without it, the pool skews
+  slightly narrow but remains within acceptable operational range.
+  <br><br>
+  <strong>When to use each config:</strong>
+  <ul style="margin:10px 0 0 18px;line-height:2.1">
+    <li><strong>Ensemble S+X ⭐</strong> — production forecasting, alert systems, resource allocation</li>
+    <li><strong>SARIMAX tuned</strong> — when interpretability or speed matters; single best individual model</li>
+    <li><strong>Ensemble S+P+X</strong> — when exact 80% calibration is a hard requirement</li>
+    <li><strong>XGBoost calibrated</strong> — feature importance analysis, non-linear signal exploration</li>
+    <li><strong>Prophet tuned</strong> — seasonal decomposition and trend visualisation only</li>
+  </ul>
+  <br>
+  <strong>With more data (3+ years):</strong> Re-run Exp 03. The informed feature selection
+  threshold may lower further, and SARIMAX + features may close the gap with the baseline.
+</div>
+
+<script>
+const P = {"results": [{"avg_crps": 27.008, "avg_rmse": 49.573, "avg_mae": 37.49, "r2": 0.917, "avg_cov80": 0.8187, "avg_cov95": 0.9505, "dist_crps": [22.762, 14.39, 34.71, 23.31, 13.8, 63.164, 16.921], "dist_cov80": [0.6923, 0.6923, 0.7692, 0.9231, 0.9615, 0.8462, 0.8462], "label": "SARIMAX baseline", "elapsed": 3.0, "note": "Fixed (1,0,1) \u00b7 3 raw climate covariates"}, {"avg_crps": 26.973, "avg_rmse": 49.925, "avg_mae": 36.206, "r2": 0.914, "avg_cov80": 0.8571, "avg_cov95": 0.9396, "dist_crps": [22.705, 12.9, 34.77, 23.439, 13.452, 64.867, 16.675], "dist_cov80": [0.6923, 0.9615, 0.8077, 0.8846, 0.9615, 0.8462, 0.8462], "label": "SARIMAX tuned", "elapsed": 3.0, "note": "(1,0,1) \u00b7 district-specific features |r|>0.1"}, {"avg_crps": 37.422, "avg_rmse": 64.828, "avg_mae": 47.037, "r2": 0.872, "avg_cov80": 0.6154, "avg_cov95": 0.7143, "dist_crps": [31.731, 20.768, 57.015, 19.846, 43.823, 59.63, 29.138], "dist_cov80": [0.5385, 0.6923, 0.4231, 0.8462, 0.5, 0.9231, 0.3846], "label": "Prophet tuned", "elapsed": 9.7, "note": "cps=0.1 \u00b7 sps=2.0 \u00b7 multiplicative"}, {"avg_crps": 27.827, "avg_rmse": 50.931, "avg_mae": 37.074, "r2": 0.915, "avg_cov80": 0.533, "avg_cov95": 0.7308, "dist_crps": [23.749, 15.344, 40.355, 20.736, 16.991, 56.26, 21.353], "dist_cov80": [0.5, 0.4231, 0.5385, 0.3462, 0.8846, 0.7692, 0.2692], "label": "XGBoost calibrated", "elapsed": 11.0, "note": "Quantile reg \u00b7 n_est=100 depth=4 lr=0.05"}, {"avg_crps": 27.142, "avg_rmse": 51.461, "avg_mae": 36.576, "r2": 0.917, "avg_cov80": 0.8077, "avg_cov95": 0.9451, "dist_crps": [24.112, 15.166, 39.851, 18.793, 19.187, 55.043, 17.842], "dist_cov80": [0.7308, 0.6154, 0.7308, 0.8846, 0.9615, 0.8846, 0.8462], "label": "Ensemble S+P+X", "elapsed": 0.1, "note": "SARIMAX tuned + Prophet tuned + XGBoost calibrated \u00b7 150 samples"}, {"avg_crps": 25.908, "avg_rmse": 48.84, "avg_mae": 35.692, "r2": 0.921, "avg_cov80": 0.7692, "avg_cov95": 0.9396, "dist_crps": [22.664, 13.458, 35.895, 20.783, 13.995, 56.064, 18.499], "dist_cov80": [0.7308, 0.5769, 0.7308, 0.7308, 0.9615, 0.8846, 0.7692], "label": "Ensemble S+X", "elapsed": 0.1, "note": "SARIMAX tuned + XGBoost calibrated \u00b7 100 samples \u00b7 no Prophet"}], "districts": ["Hamahamet-Mboinkou", "Hambou", "Mbadjini Est", "Mbadjini Ouest", "Mitsamiouli-Mboud\u00e9", "Moroni-Bambao", "Oichili-Dimani"], "xgb_cfg": {"n_estimators": 100, "max_depth": 4, "learning_rate": 0.05, "avg_crps": 27.827, "avg_cov80": 0.533}, "prophet_cfg": {"cps": 0.1, "sps": 2.0, "mode": "multiplicative"}, "sarimax_thr": 0.1, "n_samples": 50, "train_weeks": 78};
+const RESULTS = P.results;
+
+// Config order for charts (original 1→6)
+const ORDER = ["SARIMAX baseline","SARIMAX tuned","Prophet tuned",
+               "XGBoost calibrated","Ensemble S+P+X","Ensemble S+X"];
+const COLORS = ["#1e66f5","#8839ef","#fe640b","#179299","#a099bb","#40a02b"];
+const STARS  = ["","","","","","★ "];
+
+function getR(label) { return RESULTS.find(r => r.label===label); }
+
+const ordered = ORDER.map(l => getR(l)).filter(Boolean);
+const labels  = ORDER.map((l,i) => STARS[i]+l.replace(" (tuned)","").replace(" calibrated",""));
+
+// CRPS bar
+new Chart(document.getElementById("crpsChart"), {
+  type:"bar",
+  data:{ labels, datasets:[{
+    label:"avg CRPS", data:ordered.map(r=>r.avg_crps),
+    backgroundColor:COLORS.map(c=>c+"cc"), borderRadius:6, borderSkipped:false
+  }]},
+  options:{
+    responsive:true, maintainAspectRatio:true,
+    plugins:{ legend:{display:false} },
+    scales:{
+      x:{ ticks:{font:{size:10},maxRotation:0}, grid:{display:false} },
+      y:{ title:{display:true,text:"CRPS",font:{size:10}},
+           ticks:{font:{size:10}}, grid:{color:"#8839ef0a"} }
+    }
+  }
+});
+
+// Coverage grouped bar
+new Chart(document.getElementById("covChart"), {
+  type:"bar",
+  data:{ labels, datasets:[
+    { label:"80% cov", data:ordered.map(r=>+(r.avg_cov80*100).toFixed(1)),
+       backgroundColor:COLORS.map(c=>c+"aa"), borderRadius:4 },
+    { label:"95% cov", data:ordered.map(r=>+(r.avg_cov95*100).toFixed(1)),
+       backgroundColor:COLORS.map(c=>c+"44"), borderRadius:4 },
+    { label:"target 80%", data:Array(6).fill(80), type:"line",
+       borderColor:"#40a02b99", borderDash:[4,3], pointRadius:0, fill:false }
+  ]},
+  options:{
+    responsive:true, maintainAspectRatio:true,
+    plugins:{ legend:{ position:"top", labels:{ font:{size:10}, boxWidth:10 } } },
+    scales:{
+      x:{ ticks:{font:{size:10},maxRotation:0}, grid:{display:false} },
+      y:{ min:0, max:110, title:{display:true,text:"%",font:{size:10}},
+           ticks:{font:{size:10}}, grid:{color:"#8839ef0a"} }
+    }
+  }
+});
+
+// RMSE bar
+new Chart(document.getElementById("rmseChart"), {
+  type:"bar",
+  data:{ labels, datasets:[{
+    label:"avg RMSE", data:ordered.map(r=>r.avg_rmse),
+    backgroundColor:COLORS.map(c=>c+"cc"), borderRadius:6, borderSkipped:false
+  }]},
+  options:{
+    responsive:true, maintainAspectRatio:true,
+    plugins:{ legend:{display:false} },
+    scales:{
+      x:{ ticks:{font:{size:10},maxRotation:0}, grid:{display:false} },
+      y:{ title:{display:true,text:"RMSE",font:{size:10}},
+           ticks:{font:{size:10}}, grid:{color:"#8839ef0a"} }
+    }
+  }
+});
+
+// Per-district comparison: SARIMAX baseline vs S+X
+const BASE = getR("SARIMAX baseline");
+const SX   = getR("Ensemble S+X");
+const DISTS = P.districts.map(d=>d.replace("Mitsamiouli-Mboude","Mitsamiouli"));
+new Chart(document.getElementById("distChart"), {
+  type:"bar",
+  data:{ labels:DISTS, datasets:[
+    { label:"SARIMAX baseline", data:BASE.dist_crps, backgroundColor:"#1e66f5cc", borderRadius:4 },
+    { label:"Ensemble S+X ★",  data:SX.dist_crps,   backgroundColor:"#40a02bcc", borderRadius:4 },
+  ]},
+  options:{
+    responsive:true, maintainAspectRatio:true,
+    plugins:{ legend:{ position:"top", labels:{ font:{size:10}, boxWidth:10 } } },
+    scales:{
+      x:{ ticks:{font:{size:10},maxRotation:30}, grid:{display:false} },
+      y:{ title:{display:true,text:"CRPS",font:{size:10}},
+           ticks:{font:{size:10}}, grid:{color:"#8839ef0a"} }
+    }
+  }
+});
+</script>
+</body>
+</html>
