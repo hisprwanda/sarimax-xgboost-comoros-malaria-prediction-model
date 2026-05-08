@@ -24,19 +24,20 @@ antimalarials, and bed nets *before* a transmission peak — not after it.
 
 ## What This Project Does
 
-A 7-experiment research series that systematically builds and improves a probabilistic
+An 8-experiment research series that systematically builds and improves a probabilistic
 malaria forecasting system:
 
 | Step | What was done |
 |---|---|
-| Baseline benchmark | 6 models evaluated across 78 weeks train / 26 weeks test |
+| Baseline benchmark | 7 models evaluated across 78 weeks train / 26 weeks test |
 | Exp 01 | Per-district climate–case cross-correlation & lag analysis |
 | Exp 02 | SARIMAX auto-ARIMA order selection vs fixed (1,0,1) |
-| Exp 03 | District-specific informed feature selection (|r| > 0.10 threshold) |
+| Exp 03 | District-specific informed feature selection (\|r\| > 0.10 threshold) |
 | Exp 04 | Prophet hyperparameter tuning (40-config grid search) |
 | Exp 05 | XGBoost calibration fix — residual bootstrap → quantile regression |
 | Exp 06 | Rebuilt S+P+X ensemble with all tuned components |
 | Exp 07 | **S+X ensemble discovered as champion** — Prophet removed from pool |
+| Exp 08 | **Operational robustness** — CRPS degradation under climate forecast noise |
 
 ---
 
@@ -103,7 +104,8 @@ Prophet was the weakest component (CRPS 37.4) and its removal improved ensemble 
 │   ├── exp04_prophet_tuning.py
 │   ├── exp05_xgboost_calibration.py
 │   ├── exp06_improved_ensemble.py
-│   └── exp07_final_benchmark.py
+│   ├── exp07_final_benchmark.py
+│   └── exp08_forecast_uncertainty.py
 │
 ├── output/
 │   ├── benchmark_dashboard.html          # Interactive visual benchmark
@@ -115,7 +117,8 @@ Prophet was the weakest component (CRPS 37.4) and its removal improved ensemble 
 │       ├── exp04_prophet_tuning.html
 │       ├── exp05_xgboost_calibration.html
 │       ├── exp06_improved_ensemble.html
-│       └── exp07_final_benchmark.html
+│       ├── exp07_final_benchmark.html
+│       └── exp08_forecast_uncertainty.html
 │
 └── input/                    # gitignored — raw climate & health data
 ```
