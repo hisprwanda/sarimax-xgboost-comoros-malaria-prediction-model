@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Comoros Malaria Forecast — Benchmark Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap"
+    rel="stylesheet">
+  <style>
+    *,
+    *::before,
+    *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      /* Sweet lavender-cream light palette */
+      --page: #f2eeff;
+      /* soft lavender page wash */
+      --surface: #ebe4ff;
+      /* slightly deeper lavender for sections */
+      --card: #ffffff;
+      --border: #ddd5f5;
+      --border-h: #c9bef0;
+      /* hover border */
+
+      /* Text scale */
+      --text: #2a2044;
+      /* deep violet-black — warm, not harsh */
+      --sub1: #544873;
+      --sub0: #7a6e92;
+      --muted: #a099bb;
+      --ghost: #c4bcd8;
+
+      /* Vivid Catppuccin-Latte accents — work beautifully on light bg */
+      --mauve: #8839ef;
+      --blue: #1e66f5;
+      --teal: #179299;
+      --green: #40a02b;
+      --peach: #fe640b;
+      --red: #d20f39;
+      --sky: #04a5e5;
+      --lavender: #7287fd;
+      --yellow: #c97b0d;
+      --pink: #d63d97;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+      background: var(--page);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 28px 24px 48px;
+      line-height: 1.55;
+    }
+
+    /* ── Header ───────────────────────────────────────────────────────────── */
+    .header {
+      text-align: center;
+      margin-bottom: 32px;
+      padding: 40px 32px 30px;
+      background: linear-gradient(160deg, #fff 0%, #f3eeff 100%);
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      box-shadow: 0 2px 20px #8839ef0d, 0 1px 4px #0002;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .header::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 55% 70% at 10% 100%, #7287fd12 0%, transparent 60%),
+        radial-gradient(ellipse 45% 60% at 90% 0%, #04a5e510 0%, transparent 60%);
+      pointer-events: none;
+    }
+
+    .header h1 {
+      font-size: 2rem;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      background: linear-gradient(120deg, var(--mauve) 0%, var(--blue) 55%, var(--teal) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 8px;
+    }
+
+    .header .sub {
+      color: var(--sub0);
+      font-size: 0.87rem;
+      font-weight: 400;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #40a02b14;
+      border: 1px solid #40a02b33;
+      color: var(--green);
+      padding: 5px 18px;
+      border-radius: 20px;
+      font-size: 0.77rem;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      margin-top: 14px;
+    }
+
+    /* ── KPI Row ──────────────────────────────────────────────────────────── */
+    .kpi-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 14px;
+      margin-bottom: 24px;
+    }
+
+    .kpi {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 22px 24px 18px;
+      box-shadow: 0 1px 6px #0001;
+      position: relative;
+      overflow: hidden;
+      transition: box-shadow 0.2s, border-color 0.2s;
+    }
+
+    .kpi:hover {
+      box-shadow: 0 4px 16px #8839ef14;
+      border-color: var(--border-h);
+    }
+
+    .kpi::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      border-radius: 16px 16px 0 0;
+    }
+
+    .kpi:nth-child(1)::after {
+      background: linear-gradient(90deg, var(--sky), var(--blue));
+    }
+
+    .kpi:nth-child(2)::after {
+      background: linear-gradient(90deg, var(--green), var(--teal));
+    }
+
+    .kpi:nth-child(3)::after {
+      background: linear-gradient(90deg, var(--peach), var(--yellow));
+    }
+
+    .kpi:nth-child(4)::after {
+      background: linear-gradient(90deg, var(--mauve), var(--lavender));
+    }
+
+    .kpi-label {
+      font-size: 0.68rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 1.3px;
+      font-weight: 700;
+    }
+
+    .kpi-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 2.1rem;
+      font-weight: 700;
+      margin-top: 6px;
+      letter-spacing: -1.5px;
+      line-height: 1;
+    }
+
+    .kpi-sub {
+      font-size: 0.74rem;
+      color: var(--muted);
+      margin-top: 6px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* ── Layout Grid ──────────────────────────────────────────────────────── */
+    .grid {
+      display: grid;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .grid-2 {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .grid-3 {
+      grid-template-columns: 1fr 1fr 1fr;
+    }
+
+    @media (max-width: 960px) {
+
+      .grid-2,
+      .grid-3 {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* ── Card ─────────────────────────────────────────────────────────────── */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 22px 24px;
+      box-shadow: 0 1px 6px #0001;
+      transition: box-shadow 0.2s, border-color 0.2s;
+    }
+
+    .card:hover {
+      box-shadow: 0 4px 16px #8839ef12;
+      border-color: var(--border-h);
+    }
+
+    .card-title {
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.1px;
+      color: var(--muted);
+      margin-bottom: 18px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    /* ── Table ────────────────────────────────────────────────────────────── */
+    .table-wrap {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.84rem;
+    }
+
+    thead th {
+      background: var(--surface);
+      color: var(--sub0);
+      font-weight: 700;
+      text-transform: uppercase;
+      font-size: 0.66rem;
+      letter-spacing: 0.9px;
+      padding: 10px 14px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+
+    tbody td {
+      padding: 11px 14px;
+      border-bottom: 1px solid #f0ebff;
+      white-space: nowrap;
+      color: var(--sub1);
+    }
+
+    tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    tbody tr {
+      transition: background 0.15s;
+    }
+
+    tbody tr:hover td {
+      background: #f7f4ff;
+      color: var(--text);
+    }
+
+    tbody tr.best td {
+      background: #f0fff5;
+    }
+
+    tbody tr.best td:first-child {
+      border-left: 3px solid var(--green);
+    }
+
+    .model-name {
+      font-weight: 600;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 9px;
+    }
+
+    .model-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .rank {
+      width: 24px;
+      height: 24px;
+      border-radius: 7px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.68rem;
+      font-weight: 800;
+      flex-shrink: 0;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .rank-1 {
+      background: linear-gradient(135deg, #f9e2af, #fe9d49);
+      color: #7a3800;
+    }
+
+    .rank-2 {
+      background: #ebe4ff;
+      color: var(--mauve);
+      border: 1px solid var(--border);
+    }
+
+    .rank-3 {
+      background: #fce8ee;
+      color: var(--red);
+      border: 1px solid #f8c5d0;
+    }
+
+    .metric-bar {
+      height: 4px;
+      border-radius: 2px;
+      background: var(--surface);
+      margin-top: 5px;
+      min-width: 60px;
+    }
+
+    .metric-bar-fill {
+      height: 100%;
+      border-radius: 2px;
+      transition: width 1s ease;
+    }
+
+    .val {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 500;
+      font-size: 0.81rem;
+      color: var(--text);
+    }
+
+    canvas {
+      max-height: 300px;
+    }
+
+    /* ── Footer ───────────────────────────────────────────────────────────── */
+    .footer {
+      text-align: center;
+      padding: 28px 0 4px;
+      color: var(--ghost);
+      font-size: 0.72rem;
+      letter-spacing: 0.3px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- ── Header ── -->
+  <div class="header">
+    <h1>Comoros Malaria Forecast — Benchmark</h1>
+    <p class="sub">6-Model Probabilistic Comparison &nbsp;·&nbsp; Ngadjizi Region, 7 Districts &nbsp;·&nbsp; Train weeks
+      1–78 &nbsp;|&nbsp; Test weeks 79–104</p>
+    <div class="badge" id="champion-badge">Champion: loading…</div>
+  </div>
+
+  <!-- ── KPI Cards ── -->
+  <div class="kpi-row" id="kpis"></div>
+
+  <!-- ── Table ── -->
+  <div class="card table-wrap" style="margin-bottom:16px">
+    <div class="card-title">
+      <span class="dot" style="background:var(--blue)"></span>
+      Full Model Comparison
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Rank</th>
+          <th>Model</th>
+          <th>CRPS ↓</th>
+          <th>RMSE ↓</th>
+          <th>MAE ↓</th>
+          <th>MAPE</th>
+          <th>R²</th>
+          <th>80% Coverage</th>
+          <th>95% Coverage</th>
+          <th>Runtime</th>
+        </tr>
+      </thead>
+      <tbody id="table-body"></tbody>
+    </table>
+  </div>
+
+  <!-- ── Charts Row 1 ── -->
+  <div class="grid grid-2">
+    <div class="card">
+      <div class="card-title"><span class="dot" style="background:var(--green)"></span>Error Metrics — RMSE &amp; MAE
+      </div>
+      <canvas id="barChart"></canvas>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="dot" style="background:var(--mauve)"></span>Multi-Metric Radar Profile</div>
+      <canvas id="radarChart"></canvas>
+    </div>
+  </div>
+
+  <!-- ── Charts Row 2 ── -->
+  <div class="grid grid-3" style="margin-top:16px">
+    <div class="card">
+      <div class="card-title"><span class="dot" style="background:var(--peach)"></span>R² Score (variance explained)
+      </div>
+      <canvas id="r2Chart"></canvas>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="dot" style="background:var(--lavender)"></span>Prediction Interval Coverage
+      </div>
+      <canvas id="covChart"></canvas>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="dot" style="background:var(--sky)"></span>CRPS — lower is better</div>
+      <canvas id="crpsChart"></canvas>
+    </div>
+  </div>
+
+  <div class="footer">
+    Extracted from benchmark_results.csv &nbsp;·&nbsp; Comoros Climate-Health Modeling &nbsp;·&nbsp; Ngadjizi Region
+  </div>
+
+  <script>
+    // ── DATA ─────────────────────────────────────────────────────────────────
+    const models = [
+      { name: "SARIMAX baseline", rmse: 52.76, mae: 35.34, mape: 88.56, r2: 0.927, crps: 26.07, cov80: 86.81, cov95: 94.51, width80: 140.41, time: 2.39 },
+      { name: "Prophet baseline", rmse: 74.80, mae: 50.71, mape: 90.15, r2: 0.852, crps: 38.15, cov80: 59.89, cov95: 75.82, width80: 91.50, time: 4.30 },
+      { name: "SARIMAX + features", rmse: 56.00, mae: 35.86, mape: 91.87, r2: 0.917, crps: 27.06, cov80: 80.77, cov95: 92.31, width80: 128.85, time: 4.35 },
+      { name: "Prophet + features", rmse: 102.00, mae: 65.97, mape: 85.28, r2: 0.725, crps: 52.93, cov80: 39.01, cov95: 58.79, width80: 67.96, time: 4.00 },
+      { name: "XGBoost", rmse: 64.40, mae: 41.85, mape: 109.17, r2: 0.891, crps: 40.91, cov80: 3.85, cov95: 6.04, width80: 3.61, time: 9.50 },
+      { name: "Ensemble (S+P+X)", rmse: 62.76, mae: 39.74, mape: 99.07, r2: 0.896, crps: 29.26, cov80: 75.82, cov95: 91.76, width80: 103.44, time: 0.004 }
+    ];
+
+    // Vivid, legible on white — Catppuccin Latte hues
+    const modelColors = [
+      '#04a5e5', // sky     — SARIMAX baseline
+      '#8839ef', // mauve   — Prophet baseline
+      '#40a02b', // green   — SARIMAX + features
+      '#d20f39', // red     — Prophet + features
+      '#fe640b', // peach   — XGBoost
+      '#c97b0d', // yellow  — Ensemble
+    ];
+    const shortNames = ['SARIMAX base', 'Prophet base', 'SARIMAX+feat', 'Prophet+feat', 'XGBoost', 'Ensemble'];
+
+    // ── Rankings ──────────────────────────────────────────────────────────────
+    const byCrps = [...models].sort((a, b) => a.crps - b.crps);
+    const byRmse = [...models].sort((a, b) => a.rmse - b.rmse);
+    const byR2 = [...models].sort((a, b) => b.r2 - a.r2);
+    const byCov80 = [...models].sort((a, b) => b.cov80 - a.cov80);
+
+    document.getElementById('champion-badge').textContent = '🏆  Champion (CRPS): ' + byCrps[0].name;
+
+    // ── KPI Cards ─────────────────────────────────────────────────────────────
+    document.getElementById('kpis').innerHTML = `
+  <div class="kpi">
+    <div class="kpi-label">Best CRPS</div>
+    <div class="kpi-value" style="color:#04a5e5">${byCrps[0].crps.toFixed(2)}</div>
+    <div class="kpi-sub">${byCrps[0].name}</div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-label">Best RMSE</div>
+    <div class="kpi-value" style="color:var(--green)">${byRmse[0].rmse.toFixed(1)}</div>
+    <div class="kpi-sub">${byRmse[0].name}</div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-label">Best R²</div>
+    <div class="kpi-value" style="color:var(--peach)">${byR2[0].r2.toFixed(3)}</div>
+    <div class="kpi-sub">${byR2[0].name}</div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-label">Best 80% Coverage</div>
+    <div class="kpi-value" style="color:var(--mauve)">${byCov80[0].cov80.toFixed(1)}<span style="font-size:1.1rem;font-weight:500">%</span></div>
+    <div class="kpi-sub">${byCov80[0].name}</div>
+  </div>
+`;
+
+    // ── Table ─────────────────────────────────────────────────────────────────
+    const maxRmse = Math.max(...models.map(m => m.rmse));
+    const tableSorted = models.map((m, i) => ({ ...m, origIdx: i }))
+      .sort((a, b) => a.crps - b.crps);
+    const tbody = document.getElementById('table-body');
+
+    tableSorted.forEach((m, i) => {
+      const rank = i + 1;
+      const rc = rank === 1 ? 'rank-1' : rank === 2 ? 'rank-2' : rank === 3 ? 'rank-3' : '';
+      const barW = Math.round((1 - m.rmse / maxRmse) * 100);
+      const barClr = m.rmse < 60 ? 'var(--green)' : m.rmse < 80 ? 'var(--peach)' : 'var(--red)';
+      const r2Clr = m.r2 > 0.9 ? 'var(--green)' : m.r2 > 0.75 ? 'var(--peach)' : 'var(--red)';
+      const covClr = m.cov80 > 70 ? 'var(--green)' : m.cov80 > 40 ? 'var(--peach)' : 'var(--red)';
+
+      tbody.innerHTML += `
+  <tr class="${rank === 1 ? 'best' : ''}">
+    <td><span class="rank ${rc}">${rank}</span></td>
+    <td><span class="model-name">
+      <span class="model-dot" style="background:${modelColors[m.origIdx]}"></span>
+      ${m.name}
+    </span></td>
+    <td><span class="val" style="color:${rank === 1 ? 'var(--green)' : 'inherit'}">${m.crps.toFixed(2)}</span></td>
+    <td>
+      <span class="val">${m.rmse.toFixed(1)}</span>
+      <div class="metric-bar"><div class="metric-bar-fill" style="width:${100 - barW}%;background:${barClr}"></div></div>
+    </td>
+    <td><span class="val">${m.mae.toFixed(1)}</span></td>
+    <td>${m.mape.toFixed(1)}%</td>
+    <td style="color:${r2Clr}"><span class="val">${m.r2.toFixed(3)}</span></td>
+    <td style="color:${covClr}"><span class="val">${m.cov80.toFixed(1)}%</span></td>
+    <td><span class="val">${m.cov95.toFixed(1)}%</span></td>
+    <td style="color:var(--muted)">${m.time < 0.1 ? '<0.1s' : m.time.toFixed(1) + 's'}</td>
+  </tr>`;
+    });
+
+    // ── Chart.js global defaults ──────────────────────────────────────────────
+    Chart.defaults.color = '#7a6e92';
+    Chart.defaults.borderColor = '#e8e2f5';
+    Chart.defaults.font.family = "'Plus Jakarta Sans', sans-serif";
+    Chart.defaults.font.size = 11;
+    Chart.defaults.plugins.legend.labels.usePointStyle = true;
+    Chart.defaults.plugins.legend.labels.pointStyle = 'circle';
+    Chart.defaults.plugins.legend.labels.padding = 14;
+    Chart.defaults.plugins.tooltip.backgroundColor = '#ffffff';
+    Chart.defaults.plugins.tooltip.borderColor = '#ddd5f5';
+    Chart.defaults.plugins.tooltip.borderWidth = 1;
+    Chart.defaults.plugins.tooltip.titleColor = '#2a2044';
+    Chart.defaults.plugins.tooltip.bodyColor = '#544873';
+    Chart.defaults.plugins.tooltip.titleFont = { family: "'Plus Jakarta Sans', sans-serif", weight: '700' };
+    Chart.defaults.plugins.tooltip.bodyFont = { family: "'JetBrains Mono', monospace", size: 12 };
+    Chart.defaults.plugins.tooltip.padding = 10;
+    Chart.defaults.plugins.tooltip.boxShadow = '0 4px 16px #8839ef18';
+
+    const gridColor = '#ece7fa';
+
+    // ── Bar Chart: RMSE & MAE ─────────────────────────────────────────────────
+    new Chart(document.getElementById('barChart'), {
+      type: 'bar',
+      data: {
+        labels: shortNames,
+        datasets: [
+          { label: 'RMSE', data: models.map(m => m.rmse), backgroundColor: modelColors.map(c => c + 'cc'), borderColor: modelColors, borderWidth: 1.5, borderRadius: 5 },
+          { label: 'MAE', data: models.map(m => m.mae), backgroundColor: modelColors.map(c => c + '44'), borderColor: modelColors.map(c => c + 'aa'), borderWidth: 1.5, borderRadius: 5 }
+        ]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { position: 'top' } },
+        scales: {
+          y: { beginAtZero: true, grid: { color: gridColor } },
+          x: { grid: { display: false }, ticks: { maxRotation: 22 } }
+        }
+      }
+    });
+
+    // ── Radar Chart ────────────────────────────────────────────────────────────
+    function normalize(arr) { const mx = Math.max(...arr); return arr.map(v => v / mx * 100) }
+    const crpsN = normalize(models.map(x => x.crps));
+    const rmseN = normalize(models.map(x => x.rmse));
+    const mapeN = normalize(models.map(x => x.mape));
+
+    new Chart(document.getElementById('radarChart'), {
+      type: 'radar',
+      data: {
+        labels: ['CRPS (inv)', 'RMSE (inv)', 'R² ×100', '80% Coverage', 'MAPE (inv)'],
+        datasets: models.map((m, i) => ({
+          label: shortNames[i],
+          data: [
+            +(100 - crpsN[i]).toFixed(1),
+            +(100 - rmseN[i]).toFixed(1),
+            +(m.r2 * 100).toFixed(1),
+            +m.cov80.toFixed(1),
+            +(100 - mapeN[i]).toFixed(1),
+          ],
+          borderColor: modelColors[i],
+          backgroundColor: modelColors[i] + '18',
+          borderWidth: 2, pointRadius: 3,
+          pointBackgroundColor: modelColors[i], pointBorderColor: 'transparent'
+        }))
+      },
+      options: {
+        responsive: true,
+        scales: {
+          r: {
+            beginAtZero: true, max: 100,
+            grid: { color: gridColor },
+            angleLines: { color: '#ddd5f5' },
+            pointLabels: { font: { family: "'Plus Jakarta Sans',sans-serif", size: 11, weight: '600' }, color: '#7a6e92' },
+            ticks: { display: false }
+          }
+        },
+        plugins: { legend: { position: 'bottom', labels: { font: { size: 10 }, padding: 10 } } }
+      }
+    });
+
+    // ── R² horizontal bar ─────────────────────────────────────────────────────
+    new Chart(document.getElementById('r2Chart'), {
+      type: 'bar',
+      data: {
+        labels: shortNames,
+        datasets: [{ label: 'R²', data: models.map(m => m.r2), backgroundColor: modelColors.map(c => c + 'bb'), borderColor: modelColors, borderWidth: 1.5, borderRadius: 5 }]
+      },
+      options: {
+        indexAxis: 'y', responsive: true,
+        plugins: { legend: { display: false } },
+        scales: { x: { min: 0.5, max: 1, grid: { color: gridColor } }, y: { grid: { display: false }, ticks: { font: { size: 10 } } } }
+      }
+    });
+
+    // ── Coverage grouped bar ───────────────────────────────────────────────────
+    new Chart(document.getElementById('covChart'), {
+      type: 'bar',
+      data: {
+        labels: shortNames,
+        datasets: [
+          { label: '80% Coverage', data: models.map(m => m.cov80), backgroundColor: '#8839efaa', borderColor: '#8839ef', borderWidth: 1.5, borderRadius: 5 },
+          { label: '95% Coverage', data: models.map(m => m.cov95), backgroundColor: '#04a5e5aa', borderColor: '#04a5e5', borderWidth: 1.5, borderRadius: 5 }
+        ]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { position: 'top' } },
+        scales: {
+          y: { beginAtZero: true, max: 100, grid: { color: gridColor } },
+          x: { grid: { display: false }, ticks: { maxRotation: 30, font: { size: 9 } } }
+        }
+      }
+    });
+
+    // ── CRPS horizontal bar ────────────────────────────────────────────────────
+    const minCrps = Math.min(...models.map(m => m.crps));
+    new Chart(document.getElementById('crpsChart'), {
+      type: 'bar',
+      data: {
+        labels: shortNames,
+        datasets: [{
+          label: 'CRPS',
+          data: models.map(m => m.crps),
+          backgroundColor: models.map((m, i) => m.crps === minCrps ? '#40a02bcc' : modelColors[i] + '88'),
+          borderColor: models.map((m, i) => m.crps === minCrps ? '#40a02b' : modelColors[i]),
+          borderWidth: 1.5, borderRadius: 5
+        }]
+      },
+      options: {
+        indexAxis: 'y', responsive: true,
+        plugins: { legend: { display: false } },
+        scales: { x: { beginAtZero: true, grid: { color: gridColor } }, y: { grid: { display: false }, ticks: { font: { size: 10 } } } }
+      }
+    });
+  </script>
+</body>
+
+</html>
