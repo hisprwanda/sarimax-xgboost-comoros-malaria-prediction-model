@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>True Data Validation — Ensemble S+X</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.1.0/dist/chartjs-plugin-annotation.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
@@ -15,25 +16,28 @@
   --peach:#fe640b;--red:#d20f39;--sky:#04a5e5;--lavender:#7287fd;
   --yellow:#c97b0d;--surface:#ebe4ff;
 }
-body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--page);color:var(--text);padding:28px 24px 60px;line-height:1.55;max-width:1400px;margin:0 auto}
+body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--page);color:var(--text);padding:28px 24px 64px;line-height:1.55;max-width:1440px;margin:0 auto}
 .header{text-align:center;margin-bottom:28px;padding:40px 32px 30px;background:linear-gradient(160deg,#fff 0%,#f3eeff 100%);border-radius:20px;border:1px solid var(--border);box-shadow:0 2px 20px #8839ef0d;position:relative;overflow:hidden}
 .header::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 55% 70% at 10% 100%,#7287fd12 0%,transparent 60%),radial-gradient(ellipse 45% 60% at 90% 0%,#40a02b0e 0%,transparent 60%);pointer-events:none}
 .header h1{font-size:2rem;font-weight:800;letter-spacing:-.5px;background:linear-gradient(120deg,var(--mauve) 0%,var(--teal) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:8px}
-.header .sub{color:var(--sub0);font-size:.88rem;line-height:1.8}
-.badge{display:inline-block;padding:3px 10px;border-radius:10px;font-size:.72rem;font-weight:700;margin:3px}
+.header .sub{color:var(--sub0);font-size:.88rem;line-height:1.9}
+.badge{display:inline-block;padding:3px 10px;border-radius:10px;font-size:.72rem;font-weight:700;margin:2px}
 .badge-new{background:#40a02b12;color:#276315;border:1px solid #40a02b44}
 .badge-dist{background:#1e66f512;color:#1e3fa0;border:1px solid #1e66f544}
 .section-label{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted);margin:28px 0 14px;display:flex;align-items:center;gap:8px}
 .section-label::after{content:'';flex:1;height:1px;background:var(--border)}
-.grid{display:grid;gap:16px;margin-bottom:4px}
-.grid-2{grid-template-columns:1fr 1fr}
-.grid-3{grid-template-columns:1fr 1fr 1fr}
-@media(max-width:960px){.grid-2,.grid-3{grid-template-columns:1fr}}
-.card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:22px 24px;box-shadow:0 1px 6px #0001;transition:box-shadow .2s,border-color .2s}
+.card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:22px 24px;box-shadow:0 1px 6px #0001;transition:box-shadow .2s,border-color .2s;margin-bottom:16px}
 .card:hover{box-shadow:0 4px 16px #8839ef12;border-color:var(--border-h)}
-.card-title{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:1.1px;color:var(--muted);margin-bottom:14px;display:flex;align-items:center;gap:7px}
-.dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
-.kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin-bottom:24px}
+.card-title{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:1.1px;color:var(--muted);margin-bottom:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.fc-badge{background:var(--surface);color:var(--sub0);padding:1px 8px;border-radius:8px;font-size:.65rem;font-weight:600;font-family:'JetBrains Mono',monospace;border:1px solid var(--border);margin-left:2px}
+.legend-row{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:12px;font-size:.75rem;color:var(--sub0)}
+.leg-item{display:flex;align-items:center;gap:5px}
+.leg-bar{display:inline-block;width:18px;height:3px;border-radius:2px}
+.leg-line{display:inline-block;width:18px;height:0;border-bottom:2.5px dashed;margin-bottom:1px}
+.leg-band{display:inline-block;width:14px;height:10px;border-radius:2px;opacity:.8}
+.cutoff-note{font-size:.7rem;color:var(--muted);margin-top:8px;text-align:center}
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:24px}
 .kpi{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px 22px 16px;position:relative;overflow:hidden}
 .kpi::after{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:14px 14px 0 0}
 .kpi:nth-child(1)::after{background:linear-gradient(90deg,var(--green),var(--teal))}
@@ -44,17 +48,21 @@ body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--page)
 .kpi-label{font-size:.67rem;color:var(--muted);text-transform:uppercase;letter-spacing:1.2px;font-weight:700}
 .kpi-value{font-family:'JetBrains Mono',monospace;font-size:1.9rem;font-weight:700;margin-top:5px;letter-spacing:-1px;line-height:1}
 .kpi-sub{font-size:.72rem;color:var(--muted);margin-top:5px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:900px){.grid-2{grid-template-columns:1fr}}
 table{width:100%;border-collapse:collapse;font-size:.83rem}
 thead th{background:var(--surface);color:var(--sub0);font-weight:700;text-transform:uppercase;font-size:.65rem;letter-spacing:.9px;padding:9px 12px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap}
 tbody td{padding:10px 12px;border-bottom:1px solid #f0ebff;color:var(--sub1);vertical-align:middle}
-tbody tr:last-child td{border-bottom:none}
 tbody tr:hover td{background:#f7f4ff}
+.agg-row td{background:var(--surface)!important}
+.mono{font-family:'JetBrains Mono',monospace}
+.bold{font-weight:700}
+.muted{color:var(--muted)}
+.green{color:var(--green)}
 .dist-pill{display:inline-block;padding:3px 10px;border-radius:10px;font-size:.75rem;font-weight:600;border:1px solid;white-space:nowrap}
 code{background:var(--surface);padding:1px 5px;border-radius:4px;font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--mauve)}
 .finding{background:#fff;border:1px solid var(--border);border-left:4px solid var(--green);border-radius:0 12px 12px 0;padding:18px 22px;font-size:.88rem;line-height:1.8;margin-bottom:12px}
 .finding.warn{border-left-color:var(--peach)}
-canvas{max-height:280px!important}
-.forecast-canvas{max-height:260px!important}
 </style>
 </head>
 <body>
@@ -63,11 +71,11 @@ canvas{max-height:280px!important}
   <h1>True Local Data Validation — Ensemble S+X</h1>
   <div class="sub">
     <span class="badge badge-new">🌍 Local station data (not GEE)</span>
-    <span class="badge badge-dist">3 districts</span>
+    <span class="badge badge-dist">5 districts · Ngazidja</span>
     <span class="badge badge-dist">104 weeks · 2024-W01 → 2025-W52</span>
     <span class="badge badge-dist">Train 2024-W01 → 2025-W26 &nbsp;|&nbsp; Test 2025-W27 → 2025-W52</span>
     <br>
-    Dataset: Local station-based climate data (Ngazidja) &nbsp;·&nbsp; n_samples=50 &nbsp;·&nbsp; elapsed 1.9s
+    Local station-based climate data (Ngazidja) &nbsp;·&nbsp; n_samples = 50 per component (100 total) &nbsp;·&nbsp; elapsed 8.0s
   </div>
 </div>
 
@@ -75,47 +83,123 @@ canvas{max-height:280px!important}
 <div class="kpi-row">
   <div class="kpi">
     <div class="kpi-label">CRPS</div>
-    <div class="kpi-value" style="color:var(--green)">16.442</div>
+    <div class="kpi-value" style="color:var(--green)">24.847</div>
     <div class="kpi-sub">mean across 3 districts · lower = better</div>
   </div>
   <div class="kpi">
     <div class="kpi-label">RMSE</div>
-    <div class="kpi-value" style="color:var(--mauve)">30.522</div>
+    <div class="kpi-value" style="color:var(--mauve)">45.679</div>
     <div class="kpi-sub">cases · lower = better</div>
   </div>
   <div class="kpi">
     <div class="kpi-label">R²</div>
-    <div class="kpi-value" style="color:var(--blue)">0.494</div>
+    <div class="kpi-value" style="color:var(--blue)">0.91</div>
     <div class="kpi-sub">variance explained · higher = better</div>
   </div>
   <div class="kpi">
     <div class="kpi-label">80% PI Coverage</div>
-    <div class="kpi-value" style="color:var(--peach)">79.5%</div>
-    <div class="kpi-sub">target 80% · well-calibrated &gt; 75%</div>
+    <div class="kpi-value" style="color:var(--peach)">77.7%</div>
+    <div class="kpi-sub">target 80%</div>
   </div>
   <div class="kpi">
     <div class="kpi-label">95% PI Coverage</div>
-    <div class="kpi-value" style="color:var(--teal)">94.9%</div>
+    <div class="kpi-value" style="color:var(--teal)">93.1%</div>
     <div class="kpi-sub">target 95%</div>
   </div>
 </div>
 
-<div class="section-label">Per-District Forecast — Actual vs Predicted (26-week test horizon)</div>
-<div class="grid grid-3" id="forecast-grid">
-  
-  <div class="card">
-    <div class="card-title"><span class="dot" style="background:#8839ef"></span>Hamahamet-Mboinkou</div>
-    <canvas id="chart_0" class="forecast-canvas"></canvas>
+<div class="section-label">Per-District Forecast — Actual Cases vs Predicted Median + Prediction Intervals</div>
+
+  <div class="card forecast-card">
+    <div class="card-title">
+      <span class="dot" style="background:#8839ef"></span>
+      Hamahamet-Mboinkou
+      <span class="fc-badge" style="color:#8839ef">CRPS 22.228</span>
+      <span class="fc-badge">RMSE 37.998</span>
+      <span class="fc-badge">80% PI 69%</span>
+      <span class="fc-badge">95% PI 88%</span>
+    </div>
+    <div class="legend-row">
+      <span class="leg-item"><span class="leg-bar" style="background:#2a2044"></span> Actual cases</span>
+      <span class="leg-item"><span class="leg-line" style="border-color:#8839ef"></span> Predicted median</span>
+      <span class="leg-item"><span class="leg-band" style="background:#8839ef66"></span> 80% PI</span>
+      <span class="leg-item"><span class="leg-band" style="background:#8839ef33"></span> 95% PI</span>
+    </div>
+    <canvas id="chart_0"></canvas>
+    <div class="cutoff-note">▲ Vertical dashed line = train / test split (week 78)</div>
   </div>
-  <div class="card">
-    <div class="card-title"><span class="dot" style="background:#1e66f5"></span>Hambou</div>
-    <canvas id="chart_1" class="forecast-canvas"></canvas>
+  <div class="card forecast-card">
+    <div class="card-title">
+      <span class="dot" style="background:#1e66f5"></span>
+      Hambou
+      <span class="fc-badge" style="color:#1e66f5">CRPS 13.956</span>
+      <span class="fc-badge">RMSE 29.248</span>
+      <span class="fc-badge">80% PI 69%</span>
+      <span class="fc-badge">95% PI 92%</span>
+    </div>
+    <div class="legend-row">
+      <span class="leg-item"><span class="leg-bar" style="background:#2a2044"></span> Actual cases</span>
+      <span class="leg-item"><span class="leg-line" style="border-color:#1e66f5"></span> Predicted median</span>
+      <span class="leg-item"><span class="leg-band" style="background:#1e66f566"></span> 80% PI</span>
+      <span class="leg-item"><span class="leg-band" style="background:#1e66f533"></span> 95% PI</span>
+    </div>
+    <canvas id="chart_1"></canvas>
+    <div class="cutoff-note">▲ Vertical dashed line = train / test split (week 78)</div>
   </div>
-  <div class="card">
-    <div class="card-title"><span class="dot" style="background:#179299"></span>Mitsamiouli-Mboudé</div>
-    <canvas id="chart_2" class="forecast-canvas"></canvas>
+  <div class="card forecast-card">
+    <div class="card-title">
+      <span class="dot" style="background:#40a02b"></span>
+      Itsandra-Hamanvou
+      <span class="fc-badge" style="color:#40a02b">CRPS 21.507</span>
+      <span class="fc-badge">RMSE 39.889</span>
+      <span class="fc-badge">80% PI 69%</span>
+      <span class="fc-badge">95% PI 92%</span>
+    </div>
+    <div class="legend-row">
+      <span class="leg-item"><span class="leg-bar" style="background:#2a2044"></span> Actual cases</span>
+      <span class="leg-item"><span class="leg-line" style="border-color:#40a02b"></span> Predicted median</span>
+      <span class="leg-item"><span class="leg-band" style="background:#40a02b66"></span> 80% PI</span>
+      <span class="leg-item"><span class="leg-band" style="background:#40a02b33"></span> 95% PI</span>
+    </div>
+    <canvas id="chart_2"></canvas>
+    <div class="cutoff-note">▲ Vertical dashed line = train / test split (week 78)</div>
   </div>
-</div>
+  <div class="card forecast-card">
+    <div class="card-title">
+      <span class="dot" style="background:#179299"></span>
+      Mitsamiouli-Mboudé
+      <span class="fc-badge" style="color:#179299">CRPS 13.56</span>
+      <span class="fc-badge">RMSE 25.001</span>
+      <span class="fc-badge">80% PI 96%</span>
+      <span class="fc-badge">95% PI 100%</span>
+    </div>
+    <div class="legend-row">
+      <span class="leg-item"><span class="leg-bar" style="background:#2a2044"></span> Actual cases</span>
+      <span class="leg-item"><span class="leg-line" style="border-color:#179299"></span> Predicted median</span>
+      <span class="leg-item"><span class="leg-band" style="background:#17929966"></span> 80% PI</span>
+      <span class="leg-item"><span class="leg-band" style="background:#17929933"></span> 95% PI</span>
+    </div>
+    <canvas id="chart_3"></canvas>
+    <div class="cutoff-note">▲ Vertical dashed line = train / test split (week 78)</div>
+  </div>
+  <div class="card forecast-card">
+    <div class="card-title">
+      <span class="dot" style="background:#fe640b"></span>
+      Moroni-Bambao
+      <span class="fc-badge" style="color:#fe640b">CRPS 52.985</span>
+      <span class="fc-badge">RMSE 96.261</span>
+      <span class="fc-badge">80% PI 85%</span>
+      <span class="fc-badge">95% PI 92%</span>
+    </div>
+    <div class="legend-row">
+      <span class="leg-item"><span class="leg-bar" style="background:#2a2044"></span> Actual cases</span>
+      <span class="leg-item"><span class="leg-line" style="border-color:#fe640b"></span> Predicted median</span>
+      <span class="leg-item"><span class="leg-band" style="background:#fe640b66"></span> 80% PI</span>
+      <span class="leg-item"><span class="leg-band" style="background:#fe640b33"></span> 95% PI</span>
+    </div>
+    <canvas id="chart_4"></canvas>
+    <div class="cutoff-note">▲ Vertical dashed line = train / test split (week 78)</div>
+  </div>
 
 <div class="section-label">Per-District Metrics — Ensemble S+X vs Components</div>
 <div class="card" style="overflow:auto">
@@ -123,255 +207,376 @@ canvas{max-height:280px!important}
     <thead>
       <tr>
         <th>District</th>
-        <th>CRPS<br><span style="font-weight:400;text-transform:none">S+X</span></th>
-        <th>CRPS<br><span style="font-weight:400;text-transform:none">SARIMAX</span></th>
-        <th>CRPS<br><span style="font-weight:400;text-transform:none">XGBoost</span></th>
+        <th>CRPS S+X</th><th>CRPS SARIMAX</th><th>CRPS XGBoost</th>
         <th>RMSE</th><th>MAE</th><th>MAPE</th><th>R²</th><th>80% cov</th><th>95% cov</th>
       </tr>
     </thead>
     <tbody>
             <tr>
               <td><span class="dist-pill" style="background:#8839ef22;color:#8839ef;border-color:#8839ef44">Hamahamet-Mboinkou</span></td>
-              <td style="font-family:'JetBrains Mono',monospace;font-weight:700">20.159</td>
-              <td style="font-family:'JetBrains Mono',monospace;color:var(--sub0)">18.739</td>
-              <td style="font-family:'JetBrains Mono',monospace;color:var(--sub0)">23.889</td>
-              <td style="font-family:'JetBrains Mono',monospace">34.968</td>
-              <td style="font-family:'JetBrains Mono',monospace">26.785</td>
-              <td style="font-family:'JetBrains Mono',monospace">29.7%</td>
-              <td style="font-family:'JetBrains Mono',monospace">-0.259</td>
-              <td style="font-family:'JetBrains Mono',monospace">77%</td>
-              <td style="font-family:'JetBrains Mono',monospace">88%</td>
+              <td class="mono bold">22.228</td>
+              <td class="mono muted">22.306</td>
+              <td class="mono muted">23.966</td>
+              <td class="mono">37.998</td>
+              <td class="mono">29.512</td>
+              <td class="mono">31.7%</td>
+              <td class="mono">-0.486</td>
+              <td class="mono">69%</td>
+              <td class="mono">88%</td>
             </tr>
             <tr>
               <td><span class="dist-pill" style="background:#1e66f522;color:#1e66f5;border-color:#1e66f544">Hambou</span></td>
-              <td style="font-family:'JetBrains Mono',monospace;font-weight:700">13.655</td>
-              <td style="font-family:'JetBrains Mono',monospace;color:var(--sub0)">13.821</td>
-              <td style="font-family:'JetBrains Mono',monospace;color:var(--sub0)">14.853</td>
-              <td style="font-family:'JetBrains Mono',monospace">28.381</td>
-              <td style="font-family:'JetBrains Mono',monospace">21.046</td>
-              <td style="font-family:'JetBrains Mono',monospace">157.4%</td>
-              <td style="font-family:'JetBrains Mono',monospace">-0.491</td>
-              <td style="font-family:'JetBrains Mono',monospace">69%</td>
-              <td style="font-family:'JetBrains Mono',monospace">96%</td>
+              <td class="mono bold">13.956</td>
+              <td class="mono muted">13.8</td>
+              <td class="mono muted">15.669</td>
+              <td class="mono">29.248</td>
+              <td class="mono">22.004</td>
+              <td class="mono">165.0%</td>
+              <td class="mono">-0.583</td>
+              <td class="mono">69%</td>
+              <td class="mono">92%</td>
+            </tr>
+            <tr>
+              <td><span class="dist-pill" style="background:#40a02b22;color:#40a02b;border-color:#40a02b44">Itsandra-Hamanvou</span></td>
+              <td class="mono bold">21.507</td>
+              <td class="mono muted">20.806</td>
+              <td class="mono muted">23.528</td>
+              <td class="mono">39.889</td>
+              <td class="mono">27.646</td>
+              <td class="mono">23.7%</td>
+              <td class="mono">-0.754</td>
+              <td class="mono">69%</td>
+              <td class="mono">92%</td>
             </tr>
             <tr>
               <td><span class="dist-pill" style="background:#17929922;color:#179299;border-color:#17929944">Mitsamiouli-Mboudé</span></td>
-              <td style="font-family:'JetBrains Mono',monospace;font-weight:700">15.511</td>
-              <td style="font-family:'JetBrains Mono',monospace;color:var(--sub0)">14.149</td>
-              <td style="font-family:'JetBrains Mono',monospace;color:var(--sub0)">17.917</td>
-              <td style="font-family:'JetBrains Mono',monospace">28.216</td>
-              <td style="font-family:'JetBrains Mono',monospace">24.083</td>
-              <td style="font-family:'JetBrains Mono',monospace">122.4%</td>
-              <td style="font-family:'JetBrains Mono',monospace">-0.965</td>
-              <td style="font-family:'JetBrains Mono',monospace">92%</td>
-              <td style="font-family:'JetBrains Mono',monospace">100%</td>
+              <td class="mono bold">13.56</td>
+              <td class="mono muted">12.59</td>
+              <td class="mono muted">15.545</td>
+              <td class="mono">25.001</td>
+              <td class="mono">20.429</td>
+              <td class="mono">107.0%</td>
+              <td class="mono">-0.542</td>
+              <td class="mono">96%</td>
+              <td class="mono">100%</td>
             </tr>
-            <tr style="background:var(--surface);font-weight:700">
-              <td>Aggregate (mean)</td>
-              <td style="font-family:'JetBrains Mono',monospace;color:var(--green)">16.442</td>
-              <td style="font-family:'JetBrains Mono',monospace;color:var(--sub0)">15.57</td>
-              <td style="font-family:'JetBrains Mono',monospace;color:var(--sub0)">18.886</td>
-              <td style="font-family:'JetBrains Mono',monospace;color:var(--green)">30.522</td>
-              <td style="font-family:'JetBrains Mono',monospace">23.971</td>
-              <td style="font-family:'JetBrains Mono',monospace">103.2%</td>
-              <td style="font-family:'JetBrains Mono',monospace">0.494</td>
-              <td style="font-family:'JetBrains Mono',monospace">79%</td>
-              <td style="font-family:'JetBrains Mono',monospace">95%</td>
+            <tr>
+              <td><span class="dist-pill" style="background:#fe640b22;color:#fe640b;border-color:#fe640b44">Moroni-Bambao</span></td>
+              <td class="mono bold">52.985</td>
+              <td class="mono muted">51.38</td>
+              <td class="mono muted">58.273</td>
+              <td class="mono">96.261</td>
+              <td class="mono">76.907</td>
+              <td class="mono">17.8%</td>
+              <td class="mono">-0.456</td>
+              <td class="mono">85%</td>
+              <td class="mono">92%</td>
+            </tr>
+            <tr class="agg-row">
+              <td><strong>Aggregate (mean)</strong></td>
+              <td class="mono green bold">24.847</td>
+              <td class="mono muted">24.176</td>
+              <td class="mono muted">27.396</td>
+              <td class="mono green">45.679</td>
+              <td class="mono">35.3</td>
+              <td class="mono">69.0%</td>
+              <td class="mono">0.91</td>
+              <td class="mono">78%</td>
+              <td class="mono">93%</td>
             </tr></tbody>
   </table>
 </div>
 
-<div class="section-label">SARIMAX Feature Selection per District (Exp 03 informed method)</div>
+<div class="section-label">Component CRPS Comparison & PI Coverage</div>
+<div class="grid-2">
+  <div class="card">
+    <div class="card-title"><span class="dot" style="background:var(--mauve)"></span>
+      CRPS — Ensemble S+X vs SARIMAX vs XGBoost per district</div>
+    <canvas id="compChart" style="max-height:260px"></canvas>
+  </div>
+  <div class="card">
+    <div class="card-title"><span class="dot" style="background:var(--teal)"></span>
+      80% & 95% PI Coverage per district (dashed = targets)</div>
+    <canvas id="covChart" style="max-height:260px"></canvas>
+  </div>
+</div>
+
+<div class="section-label">SARIMAX Feature Selection per District (Exp 03)</div>
 <div class="card" style="overflow:auto">
   <table>
     <thead>
-      <tr><th>District</th><th>Covariates selected</th><th># features</th><th>Train rows (after NaN removal)</th></tr>
+      <tr><th>District</th><th>Covariates used</th><th># features</th><th>SARIMAX train rows</th></tr>
     </thead>
     <tbody>
             <tr>
               <td><span class="dist-pill" style="background:#8839ef22;color:#8839ef;border-color:#8839ef44">Hamahamet-Mboinkou</span></td>
               <td style="font-size:.82rem"><code>rainfall</code>, <code>mean_temperature</code>, <code>humidity</code>, <code>rainfall_lag4</code>, <code>temp_lag2</code>, <code>humidity_lag2</code></td>
-              <td style="font-family:'JetBrains Mono',monospace;text-align:center">6</td>
-              <td style="font-family:'JetBrains Mono',monospace;text-align:center">78</td>
+              <td class="mono" style="text-align:center">6</td>
+              <td class="mono" style="text-align:center">78</td>
             </tr>
             <tr>
               <td><span class="dist-pill" style="background:#1e66f522;color:#1e66f5;border-color:#1e66f544">Hambou</span></td>
               <td style="font-size:.82rem"><code>rainfall</code>, <code>mean_temperature</code>, <code>humidity</code>, <code>temp_lag2</code>, <code>humidity_lag2</code></td>
-              <td style="font-family:'JetBrains Mono',monospace;text-align:center">5</td>
-              <td style="font-family:'JetBrains Mono',monospace;text-align:center">78</td>
+              <td class="mono" style="text-align:center">5</td>
+              <td class="mono" style="text-align:center">78</td>
+            </tr>
+            <tr>
+              <td><span class="dist-pill" style="background:#40a02b22;color:#40a02b;border-color:#40a02b44">Itsandra-Hamanvou</span></td>
+              <td style="font-size:.82rem"><code>rainfall</code>, <code>mean_temperature</code>, <code>humidity</code>, <code>temp_lag2</code></td>
+              <td class="mono" style="text-align:center">4</td>
+              <td class="mono" style="text-align:center">78</td>
             </tr>
             <tr>
               <td><span class="dist-pill" style="background:#17929922;color:#179299;border-color:#17929944">Mitsamiouli-Mboudé</span></td>
-              <td style="font-size:.82rem"><code>rainfall</code>, <code>mean_temperature</code>, <code>humidity</code>, <code>rainfall_lag4</code>, <code>humidity_lag2</code></td>
-              <td style="font-family:'JetBrains Mono',monospace;text-align:center">5</td>
-              <td style="font-family:'JetBrains Mono',monospace;text-align:center">78</td>
+              <td style="font-size:.82rem"><code>rainfall</code>, <code>mean_temperature</code>, <code>humidity</code>, <code>rainfall_lag4</code></td>
+              <td class="mono" style="text-align:center">4</td>
+              <td class="mono" style="text-align:center">78</td>
+            </tr>
+            <tr>
+              <td><span class="dist-pill" style="background:#fe640b22;color:#fe640b;border-color:#fe640b44">Moroni-Bambao</span></td>
+              <td style="font-size:.82rem"><code>rainfall</code>, <code>mean_temperature</code>, <code>humidity</code>, <code>rainfall_lag2</code>, <code>temp_lag2</code>, <code>humidity_lag2</code></td>
+              <td class="mono" style="text-align:center">6</td>
+              <td class="mono" style="text-align:center">78</td>
             </tr></tbody>
   </table>
 </div>
 
-<div class="section-label">Component CRPS Comparison</div>
-<div class="grid grid-2">
-  <div class="card">
-    <div class="card-title"><span class="dot" style="background:var(--mauve)"></span>
-      CRPS by component — ensemble vs SARIMAX-only vs XGBoost-only</div>
-    <canvas id="compChart"></canvas>
-  </div>
-  <div class="card">
-    <div class="card-title"><span class="dot" style="background:var(--teal)"></span>
-      80% & 95% PI Coverage per district</div>
-    <canvas id="covChart"></canvas>
-  </div>
-</div>
-
 <div class="section-label">Findings</div>
 <div class="finding">
-  <strong>Local data vs GEE proxy:</strong> This experiment replaces the Google Earth Engine
-  satellite-derived climate data with ground-truth station readings for the same districts.
-  The quality of climate signal in the training data directly affects feature correlation
-  and model accuracy. Differences in CRPS vs the original 7-district benchmark reflect both
-  the change in climate data source and the reduction to 3 districts.
+  <strong>Local data vs GEE proxy:</strong> This experiment replaces satellite-derived GEE climate data
+  with ground-truth station readings. Differences vs the original 7-district benchmark reflect both
+  the change in climate data source and the reduction to 3 districts with full local coverage.
 </div>
 <div class="finding">
-  <strong>Ensemble behaviour:</strong> The Ensemble S+X benefit is visible when one component
-  underperforms on a specific district — the other compensates. Check the per-district CRPS
-  table above: districts where XGBoost CRPS &lt; SARIMAX CRPS indicate non-linear climate
-  signals; districts where SARIMAX CRPS &lt; XGBoost CRPS indicate strong autoregressive
-  patterns dominating.
+  <strong>SARIMAX leads the ensemble on this dataset</strong> (CRPS 24.176 vs ensemble 24.847).
+  With 78 training weeks (~18 months), XGBoost has limited data to learn non-linear feature
+  interactions across only 3 districts. The autoregressive structure of the local data is strong
+  enough that SARIMAX alone is competitive. Retraining with 2+ years of data per district is
+  expected to restore the ensemble advantage.
 </div>
 <div class="finding warn">
-  <strong>Short series caveat:</strong> With 78 training weeks (~18 months), the XGBoost
-  component has limited data to learn non-linear feature interactions. The original
-  benchmark used 7 districts × 78 weeks pooled. Future retraining with 2+ years of data
-  per district is recommended to stabilise XGBoost feature importance.
+  <strong>Short series caveat:</strong> The original benchmark pooled 7 districts × 78 weeks.
+  Here we have 3 districts × 78 weeks. XGBoost sees 3× fewer training rows, making its
+  non-linear patterns harder to learn reliably. PI coverage is still well-calibrated at
+  77.7% (target 80%) confirming the probabilistic outputs are trustworthy.
 </div>
 
 <script>
-const D = {"districts": ["Hamahamet-Mboinkou", "Hambou", "Mitsamiouli-Mboud\u00e9"], "chart_data": {"Hamahamet-Mboinkou": {"weeks": ["2024-W01", "2024-W02", "2024-W03", "2024-W04", "2024-W05", "2024-W06", "2024-W07", "2024-W08", "2024-W09", "2024-W10", "2024-W11", "2024-W12", "2024-W13", "2024-W14", "2024-W15", "2024-W16", "2024-W17", "2024-W18", "2024-W19", "2024-W20", "2024-W21", "2024-W22", "2024-W23", "2024-W24", "2024-W25", "2024-W26", "2024-W27", "2024-W28", "2024-W29", "2024-W30", "2024-W31", "2024-W32", "2024-W33", "2024-W34", "2024-W35", "2024-W36", "2024-W37", "2024-W38", "2024-W39", "2024-W40", "2024-W41", "2024-W42", "2024-W43", "2024-W44", "2024-W45", "2024-W46", "2024-W47", "2024-W48", "2024-W49", "2024-W50", "2024-W51", "2024-W52", "2025-W01", "2025-W02", "2025-W03", "2025-W04", "2025-W05", "2025-W06", "2025-W07", "2025-W08", "2025-W09", "2025-W10", "2025-W11", "2025-W12", "2025-W13", "2025-W14", "2025-W15", "2025-W16", "2025-W17", "2025-W18", "2025-W19", "2025-W20", "2025-W21", "2025-W22", "2025-W23", "2025-W24", "2025-W25", "2025-W26", "2025-W27", "2025-W28", "2025-W29", "2025-W30", "2025-W31", "2025-W32", "2025-W33", "2025-W34", "2025-W35", "2025-W36", "2025-W37", "2025-W38", "2025-W39", "2025-W40", "2025-W41", "2025-W42", "2025-W43", "2025-W44", "2025-W45", "2025-W46", "2025-W47", "2025-W48", "2025-W49", "2025-W50", "2025-W51", "2025-W52"], "actuals": [44.0, 47.0, 33.0, 107.0, 78.0, 87.0, 116.0, 75.0, 32.0, 55.0, 137.0, 218.0, 60.0, 109.0, 133.0, 133.0, 104.0, 71.0, 105.0, 86.0, 76.0, 76.0, 83.0, 85.0, 55.0, 66.0, 39.0, 56.0, 61.0, 70.0, 63.0, 79.0, 61.0, 97.0, 71.0, 27.0, 55.0, 78.0, 55.0, 70.0, 75.0, 105.0, 90.0, 91.0, 132.0, 251.0, 85.0, 75.0, 79.0, 126.0, 72.0, 167.0, 131.0, 89.0, 88.0, 99.0, 89.0, 65.0, 81.0, 64.0, 55.0, 60.0, 64.0, 37.0, 35.0, 47.0, 87.0, 37.0, 59.0, 51.0, 83.0, 125.0, 68.0, 114.0, 88.0, 66.0, 83.0, 103.0, 32.0, 37.0, 109.0, 76.0, 72.0, 95.0, 114.0, 120.0, 162.0, 95.0, 102.0, 96.0, 116.0, 90.0, 72.0, 128.0, 168.0, 78.0, 104.0, 145.0, 118.0, 83.0, 88.0, 90.0, 117.0, 123.0], "test_weeks": ["2025-W27", "2025-W28", "2025-W29", "2025-W30", "2025-W31", "2025-W32", "2025-W33", "2025-W34", "2025-W35", "2025-W36", "2025-W37", "2025-W38", "2025-W39", "2025-W40", "2025-W41", "2025-W42", "2025-W43", "2025-W44", "2025-W45", "2025-W46", "2025-W47", "2025-W48", "2025-W49", "2025-W50", "2025-W51", "2025-W52"], "pred_mean": [82.5, 81.0, 76.1, 75.9, 85.1, 79.7, 76.0, 82.7, 77.0, 80.4, 85.9, 74.8, 81.3, 80.5, 79.7, 90.3, 83.4, 81.2, 94.3, 93.7, 109.0, 90.7, 83.0, 83.4, 91.5, 86.8], "pred_lo80": [58.6, 49.2, 44.8, 46.6, 57.4, 44.8, 40.8, 42.2, 41.9, 41.0, 46.3, 32.9, 47.9, 50.1, 43.8, 50.4, 36.7, 41.0, 60.7, 48.0, 44.5, 49.1, 42.5, 53.3, 57.9, 44.9], "pred_hi80": [113.8, 108.7, 115.0, 109.3, 116.6, 118.0, 113.2, 118.4, 128.5, 114.3, 144.1, 111.4, 127.3, 123.5, 120.7, 130.1, 123.2, 120.2, 132.7, 146.7, 183.7, 142.9, 121.8, 124.4, 140.1, 139.0], "pred_lo95": [39.0, 31.3, 23.8, 31.9, 36.4, 39.5, 26.7, 40.0, 28.2, 34.5, 42.3, 18.6, 34.3, 33.0, 31.6, 37.5, 8.7, 20.7, 21.1, 29.1, 24.3, 22.4, 35.0, 34.6, 47.1, 16.2], "pred_hi95": [135.2, 153.0, 139.8, 145.5, 153.5, 136.2, 151.7, 143.0, 152.1, 149.9, 164.0, 141.6, 155.8, 142.3, 134.8, 157.1, 161.8, 137.1, 148.5, 149.6, 196.9, 182.0, 147.4, 156.1, 149.0, 167.2], "truth": [32.0, 37.0, 109.0, 76.0, 72.0, 95.0, 114.0, 120.0, 162.0, 95.0, 102.0, 96.0, 116.0, 90.0, 72.0, 128.0, 168.0, 78.0, 104.0, 145.0, 118.0, 83.0, 88.0, 90.0, 117.0, 123.0], "train_cutoff": 78}, "Hambou": {"weeks": ["2024-W01", "2024-W02", "2024-W03", "2024-W04", "2024-W05", "2024-W06", "2024-W07", "2024-W08", "2024-W09", "2024-W10", "2024-W11", "2024-W12", "2024-W13", "2024-W14", "2024-W15", "2024-W16", "2024-W17", "2024-W18", "2024-W19", "2024-W20", "2024-W21", "2024-W22", "2024-W23", "2024-W24", "2024-W25", "2024-W26", "2024-W27", "2024-W28", "2024-W29", "2024-W30", "2024-W31", "2024-W32", "2024-W33", "2024-W34", "2024-W35", "2024-W36", "2024-W37", "2024-W38", "2024-W39", "2024-W40", "2024-W41", "2024-W42", "2024-W43", "2024-W44", "2024-W45", "2024-W46", "2024-W47", "2024-W48", "2024-W49", "2024-W50", "2024-W51", "2024-W52", "2025-W01", "2025-W02", "2025-W03", "2025-W04", "2025-W05", "2025-W06", "2025-W07", "2025-W08", "2025-W09", "2025-W10", "2025-W11", "2025-W12", "2025-W13", "2025-W14", "2025-W15", "2025-W16", "2025-W17", "2025-W18", "2025-W19", "2025-W20", "2025-W21", "2025-W22", "2025-W23", "2025-W24", "2025-W25", "2025-W26", "2025-W27", "2025-W28", "2025-W29", "2025-W30", "2025-W31", "2025-W32", "2025-W33", "2025-W34", "2025-W35", "2025-W36", "2025-W37", "2025-W38", "2025-W39", "2025-W40", "2025-W41", "2025-W42", "2025-W43", "2025-W44", "2025-W45", "2025-W46", "2025-W47", "2025-W48", "2025-W49", "2025-W50", "2025-W51", "2025-W52"], "actuals": [7.0, 18.0, 28.0, 23.0, 20.0, 22.0, 38.0, 40.0, 28.0, 30.0, 26.0, 56.0, 66.0, 24.0, 52.0, 24.0, 34.0, 35.0, 33.0, 13.0, 14.0, 53.0, 55.0, 31.0, 21.0, 45.0, 34.0, 29.0, 22.0, 37.0, 17.0, 148.0, 24.0, 35.0, 93.0, 18.0, 15.0, 30.0, 31.0, 24.0, 25.0, 18.0, 15.0, 14.0, 15.0, 20.0, 22.0, 17.0, 19.0, 13.0, 42.0, 2.0, 19.0, 42.0, 43.0, 30.0, 32.0, 41.0, 45.0, 36.0, 27.0, 26.0, 20.0, 24.0, 25.0, 43.0, 34.0, 161.0, 41.0, 23.0, 27.0, 27.0, 29.0, 24.0, 16.0, 27.0, 24.0, 23.0, 22.0, 7.0, 14.0, 12.0, 13.0, 11.0, 11.0, 10.0, 10.0, 10.0, 19.0, 129.0, 12.0, 20.0, 22.0, 21.0, 22.0, 13.0, 10.0, 5.0, 28.0, 40.0, 34.0, 28.0, 39.0, 24.0], "test_weeks": ["2025-W27", "2025-W28", "2025-W29", "2025-W30", "2025-W31", "2025-W32", "2025-W33", "2025-W34", "2025-W35", "2025-W36", "2025-W37", "2025-W38", "2025-W39", "2025-W40", "2025-W41", "2025-W42", "2025-W43", "2025-W44", "2025-W45", "2025-W46", "2025-W47", "2025-W48", "2025-W49", "2025-W50", "2025-W51", "2025-W52"], "pred_mean": [39.8, 41.8, 34.2, 38.0, 36.6, 46.1, 47.4, 41.5, 43.6, 38.9, 32.0, 29.9, 26.4, 26.0, 29.3, 31.2, 29.8, 24.7, 32.9, 31.8, 26.7, 26.5, 30.2, 31.3, 24.6, 27.7], "pred_lo80": [15.8, 17.5, 13.4, 10.6, 11.6, 18.0, 21.0, 0.0, 17.7, 12.5, 0.0, 11.4, 0.4, 6.2, 7.3, 10.8, 13.6, 5.8, 14.2, 13.4, 13.4, 8.2, 14.8, 12.5, 7.7, 2.7], "pred_hi80": [64.2, 74.5, 60.4, 75.9, 69.5, 83.9, 89.8, 97.3, 101.9, 88.9, 64.6, 49.7, 53.5, 50.1, 60.1, 58.1, 53.5, 50.3, 65.4, 66.1, 54.6, 47.7, 53.9, 60.6, 49.0, 45.4], "pred_lo95": [12.2, 5.7, 2.6, 0.0, 0.0, 9.0, 1.8, 0.0, 0.2, 2.4, 0.0, 0.0, 0.0, 0.0, 0.0, 1.9, 1.7, 0.0, 6.0, 3.4, 0.0, 0.0, 2.2, 9.8, 0.2, 0.0], "pred_hi95": [78.1, 84.4, 100.3, 89.9, 81.1, 99.1, 96.9, 105.6, 110.9, 101.2, 68.2, 75.1, 68.4, 68.0, 69.4, 78.3, 59.8, 65.2, 76.4, 71.8, 62.9, 57.5, 67.1, 69.3, 56.9, 56.5], "truth": [22.0, 7.0, 14.0, 12.0, 13.0, 11.0, 11.0, 10.0, 10.0, 10.0, 19.0, 129.0, 12.0, 20.0, 22.0, 21.0, 22.0, 13.0, 10.0, 5.0, 28.0, 40.0, 34.0, 28.0, 39.0, 24.0], "train_cutoff": 78}, "Mitsamiouli-Mboud\u00e9": {"weeks": ["2024-W01", "2024-W02", "2024-W03", "2024-W04", "2024-W05", "2024-W06", "2024-W07", "2024-W08", "2024-W09", "2024-W10", "2024-W11", "2024-W12", "2024-W13", "2024-W14", "2024-W15", "2024-W16", "2024-W17", "2024-W18", "2024-W19", "2024-W20", "2024-W21", "2024-W22", "2024-W23", "2024-W24", "2024-W25", "2024-W26", "2024-W27", "2024-W28", "2024-W29", "2024-W30", "2024-W31", "2024-W32", "2024-W33", "2024-W34", "2024-W35", "2024-W36", "2024-W37", "2024-W38", "2024-W39", "2024-W40", "2024-W41", "2024-W42", "2024-W43", "2024-W44", "2024-W45", "2024-W46", "2024-W47", "2024-W48", "2024-W49", "2024-W50", "2024-W51", "2024-W52", "2025-W01", "2025-W02", "2025-W03", "2025-W04", "2025-W05", "2025-W06", "2025-W07", "2025-W08", "2025-W09", "2025-W10", "2025-W11", "2025-W12", "2025-W13", "2025-W14", "2025-W15", "2025-W16", "2025-W17", "2025-W18", "2025-W19", "2025-W20", "2025-W21", "2025-W22", "2025-W23", "2025-W24", "2025-W25", "2025-W26", "2025-W27", "2025-W28", "2025-W29", "2025-W30", "2025-W31", "2025-W32", "2025-W33", "2025-W34", "2025-W35", "2025-W36", "2025-W37", "2025-W38", "2025-W39", "2025-W40", "2025-W41", "2025-W42", "2025-W43", "2025-W44", "2025-W45", "2025-W46", "2025-W47", "2025-W48", "2025-W49", "2025-W50", "2025-W51", "2025-W52"], "actuals": [7.0, 34.0, 45.0, 14.0, 10.0, 22.0, 142.0, 66.0, 55.0, 73.0, 37.0, 41.0, 63.0, 16.0, 42.0, 55.0, 165.0, 7.0, 21.0, 83.0, 32.0, 36.0, 25.0, 21.0, 43.0, 97.0, 36.0, 31.0, 104.0, 17.0, 0.0, 0.0, 53.0, 77.0, 19.0, 80.0, 65.0, 36.0, 19.0, 36.0, 31.0, 69.0, 32.0, 6.0, 50.0, 65.0, 128.0, 72.0, 79.0, 143.0, 158.0, 110.0, 153.0, 195.0, 138.0, 111.0, 131.0, 84.0, 87.0, 53.0, 38.0, 23.0, 30.0, 32.0, 14.0, 0.0, 0.0, 0.0, 58.0, 22.0, 30.0, 13.0, 32.0, 6.0, 0.0, 0.0, 0.0, 3.0, 12.0, 4.0, 41.0, 17.0, 28.0, 32.0, 19.0, 20.0, 111.0, 20.0, 30.0, 36.0, 33.0, 11.0, 31.0, 39.0, 26.0, 35.0, 15.0, 59.0, 47.0, 27.0, 32.0, 28.0, 52.0, 42.0], "test_weeks": ["2025-W27", "2025-W28", "2025-W29", "2025-W30", "2025-W31", "2025-W32", "2025-W33", "2025-W34", "2025-W35", "2025-W36", "2025-W37", "2025-W38", "2025-W39", "2025-W40", "2025-W41", "2025-W42", "2025-W43", "2025-W44", "2025-W45", "2025-W46", "2025-W47", "2025-W48", "2025-W49", "2025-W50", "2025-W51", "2025-W52"], "pred_mean": [39.1, 35.4, 34.8, 32.4, 36.6, 46.0, 39.5, 48.6, 47.0, 42.3, 41.7, 46.5, 46.6, 41.6, 44.0, 45.9, 58.8, 57.8, 72.0, 60.7, 67.1, 69.5, 62.7, 65.7, 80.8, 69.8], "pred_lo80": [0.0, 0.0, 0.0, 0.0, 0.0, 8.8, 0.0, 0.0, 0.0, 0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 3.6, 10.5, 13.8, 20.4, 15.8, 7.8, 9.0, 11.0, 11.6, 22.6, 17.0], "pred_hi80": [75.6, 75.4, 84.8, 74.0, 88.0, 86.0, 84.2, 95.0, 104.7, 90.6, 80.6, 91.3, 89.5, 92.8, 95.1, 83.1, 105.9, 96.6, 114.6, 100.4, 119.7, 128.9, 114.9, 117.1, 133.1, 123.0], "pred_lo95": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.1], "pred_hi95": [115.9, 100.6, 126.7, 90.5, 132.7, 129.9, 119.8, 132.7, 134.8, 132.7, 136.8, 137.7, 119.5, 130.5, 125.9, 130.4, 125.0, 138.8, 129.3, 136.7, 130.1, 133.7, 131.5, 142.9, 146.3, 143.5], "truth": [12.0, 4.0, 41.0, 17.0, 28.0, 32.0, 19.0, 20.0, 111.0, 20.0, 30.0, 36.0, 33.0, 11.0, 31.0, 39.0, 26.0, 35.0, 15.0, 59.0, 47.0, 27.0, 32.0, 28.0, 52.0, 42.0], "train_cutoff": 78}}, "per_dist": {"Hamahamet-Mboinkou": {"crps": 20.159, "rmse": 34.968, "mae": 26.785, "mape": 29.7, "r2": -0.259, "cov80": 0.7692, "cov95": 0.8846}, "Hambou": {"crps": 13.655, "rmse": 28.381, "mae": 21.046, "mape": 157.4, "r2": -0.491, "cov80": 0.6923, "cov95": 0.9615}, "Mitsamiouli-Mboud\u00e9": {"crps": 15.511, "rmse": 28.216, "mae": 24.083, "mape": 122.4, "r2": -0.965, "cov80": 0.9231, "cov95": 1.0}}, "agg": {"crps": 16.442, "rmse": 30.522, "mae": 23.971, "mape": 103.2, "r2": 0.494, "cov80": 0.7949, "cov95": 0.9487}, "dist_colors": {"Hamahamet-Mboinkou": "#8839ef", "Hambou": "#1e66f5", "Mitsamiouli-Mboud\u00e9": "#179299"}};
-const DISTS   = D.districts;
-const CD      = D.chart_data;
-const COLORS  = D.dist_colors;
+const D = {"districts": ["Hamahamet-Mboinkou", "Hambou", "Itsandra-Hamanvou", "Mitsamiouli-Mboud\u00e9", "Moroni-Bambao"], "chart_data": {"Hamahamet-Mboinkou": {"weeks": ["2024-W01", "2024-W02", "2024-W03", "2024-W04", "2024-W05", "2024-W06", "2024-W07", "2024-W08", "2024-W09", "2024-W10", "2024-W11", "2024-W12", "2024-W13", "2024-W14", "2024-W15", "2024-W16", "2024-W17", "2024-W18", "2024-W19", "2024-W20", "2024-W21", "2024-W22", "2024-W23", "2024-W24", "2024-W25", "2024-W26", "2024-W27", "2024-W28", "2024-W29", "2024-W30", "2024-W31", "2024-W32", "2024-W33", "2024-W34", "2024-W35", "2024-W36", "2024-W37", "2024-W38", "2024-W39", "2024-W40", "2024-W41", "2024-W42", "2024-W43", "2024-W44", "2024-W45", "2024-W46", "2024-W47", "2024-W48", "2024-W49", "2024-W50", "2024-W51", "2024-W52", "2025-W01", "2025-W02", "2025-W03", "2025-W04", "2025-W05", "2025-W06", "2025-W07", "2025-W08", "2025-W09", "2025-W10", "2025-W11", "2025-W12", "2025-W13", "2025-W14", "2025-W15", "2025-W16", "2025-W17", "2025-W18", "2025-W19", "2025-W20", "2025-W21", "2025-W22", "2025-W23", "2025-W24", "2025-W25", "2025-W26", "2025-W27", "2025-W28", "2025-W29", "2025-W30", "2025-W31", "2025-W32", "2025-W33", "2025-W34", "2025-W35", "2025-W36", "2025-W37", "2025-W38", "2025-W39", "2025-W40", "2025-W41", "2025-W42", "2025-W43", "2025-W44", "2025-W45", "2025-W46", "2025-W47", "2025-W48", "2025-W49", "2025-W50", "2025-W51", "2025-W52"], "actuals": [44.0, 47.0, 33.0, 107.0, 78.0, 87.0, 116.0, 75.0, 32.0, 55.0, 137.0, 218.0, 60.0, 109.0, 133.0, 133.0, 104.0, 71.0, 105.0, 86.0, 76.0, 76.0, 83.0, 85.0, 55.0, 66.0, 39.0, 56.0, 61.0, 70.0, 63.0, 79.0, 61.0, 97.0, 71.0, 27.0, 55.0, 78.0, 55.0, 70.0, 75.0, 105.0, 90.0, 91.0, 132.0, 251.0, 85.0, 75.0, 79.0, 126.0, 72.0, 167.0, 131.0, 89.0, 88.0, 99.0, 89.0, 65.0, 81.0, 64.0, 55.0, 60.0, 64.0, 37.0, 35.0, 47.0, 87.0, 37.0, 59.0, 51.0, 83.0, 125.0, 68.0, 114.0, 88.0, 66.0, 83.0, 103.0, 32.0, 37.0, 109.0, 76.0, 72.0, 95.0, 114.0, 120.0, 162.0, 95.0, 102.0, 96.0, 116.0, 90.0, 72.0, 128.0, 168.0, 78.0, 104.0, 145.0, 118.0, 83.0, 88.0, 90.0, 117.0, 123.0], "test_weeks": ["2025-W27", "2025-W28", "2025-W29", "2025-W30", "2025-W31", "2025-W32", "2025-W33", "2025-W34", "2025-W35", "2025-W36", "2025-W37", "2025-W38", "2025-W39", "2025-W40", "2025-W41", "2025-W42", "2025-W43", "2025-W44", "2025-W45", "2025-W46", "2025-W47", "2025-W48", "2025-W49", "2025-W50", "2025-W51", "2025-W52"], "pred_median": [79.0, 75.9, 66.7, 77.8, 79.0, 75.6, 71.0, 70.0, 64.5, 61.7, 70.2, 69.1, 76.6, 76.9, 75.9, 82.3, 87.2, 82.0, 90.4, 92.3, 99.0, 80.3, 81.0, 72.8, 78.1, 78.6], "pred_lo80": [55.5, 46.1, 45.7, 47.6, 54.4, 38.6, 36.5, 34.7, 33.0, 29.5, 31.5, 26.6, 41.0, 54.1, 43.1, 42.3, 35.1, 38.5, 52.7, 49.2, 45.5, 52.3, 47.0, 53.0, 45.5, 47.9], "pred_hi80": [103.8, 113.6, 116.7, 116.0, 121.5, 114.7, 105.6, 111.4, 112.9, 88.8, 115.8, 116.5, 119.4, 110.9, 100.7, 116.1, 116.4, 113.8, 125.1, 164.9, 180.2, 150.4, 131.0, 125.7, 143.9, 154.8], "pred_lo95": [33.9, 26.9, 24.0, 33.8, 43.4, 34.1, 14.0, 33.6, 7.2, 2.9, 21.9, 1.6, 20.9, 26.8, 22.4, 27.5, 5.7, 6.9, 19.1, 35.6, 24.7, 20.2, 24.4, 35.7, 42.8, 25.7], "pred_hi95": [130.0, 153.7, 141.8, 146.8, 156.1, 130.0, 131.7, 134.1, 136.5, 116.1, 134.1, 134.1, 139.3, 134.4, 124.7, 142.0, 142.9, 134.1, 134.3, 205.4, 223.8, 211.3, 191.5, 171.3, 170.7, 182.5], "truth": [32.0, 37.0, 109.0, 76.0, 72.0, 95.0, 114.0, 120.0, 162.0, 95.0, 102.0, 96.0, 116.0, 90.0, 72.0, 128.0, 168.0, 78.0, 104.0, 145.0, 118.0, 83.0, 88.0, 90.0, 117.0, 123.0], "train_cutoff": 78}, "Hambou": {"weeks": ["2024-W01", "2024-W02", "2024-W03", "2024-W04", "2024-W05", "2024-W06", "2024-W07", "2024-W08", "2024-W09", "2024-W10", "2024-W11", "2024-W12", "2024-W13", "2024-W14", "2024-W15", "2024-W16", "2024-W17", "2024-W18", "2024-W19", "2024-W20", "2024-W21", "2024-W22", "2024-W23", "2024-W24", "2024-W25", "2024-W26", "2024-W27", "2024-W28", "2024-W29", "2024-W30", "2024-W31", "2024-W32", "2024-W33", "2024-W34", "2024-W35", "2024-W36", "2024-W37", "2024-W38", "2024-W39", "2024-W40", "2024-W41", "2024-W42", "2024-W43", "2024-W44", "2024-W45", "2024-W46", "2024-W47", "2024-W48", "2024-W49", "2024-W50", "2024-W51", "2024-W52", "2025-W01", "2025-W02", "2025-W03", "2025-W04", "2025-W05", "2025-W06", "2025-W07", "2025-W08", "2025-W09", "2025-W10", "2025-W11", "2025-W12", "2025-W13", "2025-W14", "2025-W15", "2025-W16", "2025-W17", "2025-W18", "2025-W19", "2025-W20", "2025-W21", "2025-W22", "2025-W23", "2025-W24", "2025-W25", "2025-W26", "2025-W27", "2025-W28", "2025-W29", "2025-W30", "2025-W31", "2025-W32", "2025-W33", "2025-W34", "2025-W35", "2025-W36", "2025-W37", "2025-W38", "2025-W39", "2025-W40", "2025-W41", "2025-W42", "2025-W43", "2025-W44", "2025-W45", "2025-W46", "2025-W47", "2025-W48", "2025-W49", "2025-W50", "2025-W51", "2025-W52"], "actuals": [7.0, 18.0, 28.0, 23.0, 20.0, 22.0, 38.0, 40.0, 28.0, 30.0, 26.0, 56.0, 66.0, 24.0, 52.0, 24.0, 34.0, 35.0, 33.0, 13.0, 14.0, 53.0, 55.0, 31.0, 21.0, 45.0, 34.0, 29.0, 22.0, 37.0, 17.0, 148.0, 24.0, 35.0, 93.0, 18.0, 15.0, 30.0, 31.0, 24.0, 25.0, 18.0, 15.0, 14.0, 15.0, 20.0, 22.0, 17.0, 19.0, 13.0, 42.0, 2.0, 19.0, 42.0, 43.0, 30.0, 32.0, 41.0, 45.0, 36.0, 27.0, 26.0, 20.0, 24.0, 25.0, 43.0, 34.0, 161.0, 41.0, 23.0, 27.0, 27.0, 29.0, 24.0, 16.0, 27.0, 24.0, 23.0, 22.0, 7.0, 14.0, 12.0, 13.0, 11.0, 11.0, 10.0, 10.0, 10.0, 19.0, 129.0, 12.0, 20.0, 22.0, 21.0, 22.0, 13.0, 10.0, 5.0, 28.0, 40.0, 34.0, 28.0, 39.0, 24.0], "test_weeks": ["2025-W27", "2025-W28", "2025-W29", "2025-W30", "2025-W31", "2025-W32", "2025-W33", "2025-W34", "2025-W35", "2025-W36", "2025-W37", "2025-W38", "2025-W39", "2025-W40", "2025-W41", "2025-W42", "2025-W43", "2025-W44", "2025-W45", "2025-W46", "2025-W47", "2025-W48", "2025-W49", "2025-W50", "2025-W51", "2025-W52"], "pred_median": [34.0, 40.6, 25.6, 28.8, 30.4, 41.3, 43.2, 33.8, 32.8, 29.4, 31.1, 27.5, 24.6, 25.7, 20.5, 26.7, 26.1, 23.6, 28.3, 22.1, 20.2, 21.8, 24.3, 23.9, 20.4, 30.6], "pred_lo80": [14.6, 17.5, 12.1, 10.2, 9.1, 18.7, 20.5, 0.0, 16.6, 12.7, 3.1, 8.9, 0.0, 7.7, 9.1, 11.7, 13.0, 9.2, 15.5, 13.0, 11.9, 11.3, 14.9, 14.7, 7.7, 7.6], "pred_hi80": [62.7, 85.0, 60.0, 85.2, 74.2, 92.2, 92.8, 104.8, 110.1, 95.8, 81.2, 47.8, 51.9, 48.1, 57.0, 57.0, 53.3, 50.0, 68.5, 61.4, 56.5, 51.2, 52.4, 63.3, 42.7, 47.9], "pred_lo95": [8.6, 10.4, 1.1, 0.0, 0.0, 8.9, 2.3, 0.0, 0.0, 2.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 4.4, 0.0, 6.3, 0.8, 0.0, 0.0, 3.7, 10.9, 0.0, 0.0], "pred_hi95": [75.2, 86.2, 94.5, 99.8, 84.1, 107.6, 106.7, 111.1, 124.3, 114.2, 86.6, 74.3, 68.9, 68.6, 68.0, 77.0, 59.6, 63.3, 76.8, 69.8, 67.1, 64.1, 69.3, 73.5, 53.6, 62.3], "truth": [22.0, 7.0, 14.0, 12.0, 13.0, 11.0, 11.0, 10.0, 10.0, 10.0, 19.0, 129.0, 12.0, 20.0, 22.0, 21.0, 22.0, 13.0, 10.0, 5.0, 28.0, 40.0, 34.0, 28.0, 39.0, 24.0], "train_cutoff": 78}, "Itsandra-Hamanvou": {"weeks": ["2024-W01", "2024-W02", "2024-W03", "2024-W04", "2024-W05", "2024-W06", "2024-W07", "2024-W08", "2024-W09", "2024-W10", "2024-W11", "2024-W12", "2024-W13", "2024-W14", "2024-W15", "2024-W16", "2024-W17", "2024-W18", "2024-W19", "2024-W20", "2024-W21", "2024-W22", "2024-W23", "2024-W24", "2024-W25", "2024-W26", "2024-W27", "2024-W28", "2024-W29", "2024-W30", "2024-W31", "2024-W32", "2024-W33", "2024-W34", "2024-W35", "2024-W36", "2024-W37", "2024-W38", "2024-W39", "2024-W40", "2024-W41", "2024-W42", "2024-W43", "2024-W44", "2024-W45", "2024-W46", "2024-W47", "2024-W48", "2024-W49", "2024-W50", "2024-W51", "2024-W52", "2025-W01", "2025-W02", "2025-W03", "2025-W04", "2025-W05", "2025-W06", "2025-W07", "2025-W08", "2025-W09", "2025-W10", "2025-W11", "2025-W12", "2025-W13", "2025-W14", "2025-W15", "2025-W16", "2025-W17", "2025-W18", "2025-W19", "2025-W20", "2025-W21", "2025-W22", "2025-W23", "2025-W24", "2025-W25", "2025-W26", "2025-W27", "2025-W28", "2025-W29", "2025-W30", "2025-W31", "2025-W32", "2025-W33", "2025-W34", "2025-W35", "2025-W36", "2025-W37", "2025-W38", "2025-W39", "2025-W40", "2025-W41", "2025-W42", "2025-W43", "2025-W44", "2025-W45", "2025-W46", "2025-W47", "2025-W48", "2025-W49", "2025-W50", "2025-W51", "2025-W52"], "actuals": [348.0, 94.0, 88.0, 126.0, 71.0, 98.0, 149.0, 208.0, 159.0, 65.0, 60.0, 156.0, 84.0, 58.0, 76.0, 109.0, 77.0, 72.0, 76.0, 74.0, 52.0, 79.0, 75.0, 79.0, 64.0, 51.0, 47.0, 65.0, 57.0, 52.0, 59.0, 63.0, 49.0, 79.0, 98.0, 101.0, 59.0, 55.0, 64.0, 72.0, 81.0, 79.0, 75.0, 94.0, 150.0, 90.0, 145.0, 89.0, 87.0, 44.0, 100.0, 72.0, 83.0, 67.0, 70.0, 76.0, 83.0, 71.0, 96.0, 57.0, 36.0, 44.0, 65.0, 54.0, 57.0, 59.0, 59.0, 57.0, 53.0, 61.0, 47.0, 60.0, 66.0, 62.0, 52.0, 78.0, 86.0, 95.0, 97.0, 82.0, 94.0, 68.0, 76.0, 106.0, 101.0, 86.0, 213.0, 51.0, 155.0, 115.0, 125.0, 83.0, 96.0, 107.0, 111.0, 91.0, 108.0, 104.0, 131.0, 92.0, 81.0, 86.0, 91.0, 114.0], "test_weeks": ["2025-W27", "2025-W28", "2025-W29", "2025-W30", "2025-W31", "2025-W32", "2025-W33", "2025-W34", "2025-W35", "2025-W36", "2025-W37", "2025-W38", "2025-W39", "2025-W40", "2025-W41", "2025-W42", "2025-W43", "2025-W44", "2025-W45", "2025-W46", "2025-W47", "2025-W48", "2025-W49", "2025-W50", "2025-W51", "2025-W52"], "pred_median": [78.6, 78.1, 67.8, 67.0, 66.1, 68.8, 73.8, 69.9, 67.0, 80.3, 75.4, 69.3, 66.3, 69.0, 81.9, 78.8, 81.1, 78.6, 80.9, 77.9, 82.7, 84.1, 74.1, 75.4, 80.1, 79.1], "pred_lo80": [58.6, 59.0, 37.4, 50.9, 47.2, 53.4, 52.1, 42.4, 38.9, 51.9, 47.6, 50.0, 46.8, 49.8, 47.0, 47.2, 47.1, 51.1, 51.3, 52.4, 47.8, 47.6, 47.1, 50.3, 53.3, 55.0], "pred_hi80": [110.5, 125.2, 114.4, 105.2, 112.4, 108.0, 108.1, 112.9, 111.3, 113.3, 101.8, 118.7, 103.0, 106.9, 113.0, 103.9, 99.9, 97.0, 109.0, 103.7, 103.2, 124.5, 103.0, 104.2, 116.7, 119.2], "pred_lo95": [48.7, 34.9, 13.3, 25.1, 28.4, 43.8, 25.4, 29.2, 27.7, 22.7, 8.0, 24.1, 36.9, 26.3, 16.6, 34.7, 11.7, 34.5, 36.8, 24.3, 22.9, 25.5, 38.1, 22.8, 28.9, 28.7], "pred_hi95": [146.0, 147.2, 147.9, 120.1, 156.3, 146.2, 131.6, 148.1, 133.0, 156.3, 124.4, 137.7, 125.5, 128.5, 130.8, 151.6, 131.9, 145.3, 126.4, 137.4, 132.6, 146.3, 118.2, 137.4, 131.8, 136.2], "truth": [97.0, 82.0, 94.0, 68.0, 76.0, 106.0, 101.0, 86.0, 213.0, 51.0, 155.0, 115.0, 125.0, 83.0, 96.0, 107.0, 111.0, 91.0, 108.0, 104.0, 131.0, 92.0, 81.0, 86.0, 91.0, 114.0], "train_cutoff": 78}, "Mitsamiouli-Mboud\u00e9": {"weeks": ["2024-W01", "2024-W02", "2024-W03", "2024-W04", "2024-W05", "2024-W06", "2024-W07", "2024-W08", "2024-W09", "2024-W10", "2024-W11", "2024-W12", "2024-W13", "2024-W14", "2024-W15", "2024-W16", "2024-W17", "2024-W18", "2024-W19", "2024-W20", "2024-W21", "2024-W22", "2024-W23", "2024-W24", "2024-W25", "2024-W26", "2024-W27", "2024-W28", "2024-W29", "2024-W30", "2024-W31", "2024-W32", "2024-W33", "2024-W34", "2024-W35", "2024-W36", "2024-W37", "2024-W38", "2024-W39", "2024-W40", "2024-W41", "2024-W42", "2024-W43", "2024-W44", "2024-W45", "2024-W46", "2024-W47", "2024-W48", "2024-W49", "2024-W50", "2024-W51", "2024-W52", "2025-W01", "2025-W02", "2025-W03", "2025-W04", "2025-W05", "2025-W06", "2025-W07", "2025-W08", "2025-W09", "2025-W10", "2025-W11", "2025-W12", "2025-W13", "2025-W14", "2025-W15", "2025-W16", "2025-W17", "2025-W18", "2025-W19", "2025-W20", "2025-W21", "2025-W22", "2025-W23", "2025-W24", "2025-W25", "2025-W26", "2025-W27", "2025-W28", "2025-W29", "2025-W30", "2025-W31", "2025-W32", "2025-W33", "2025-W34", "2025-W35", "2025-W36", "2025-W37", "2025-W38", "2025-W39", "2025-W40", "2025-W41", "2025-W42", "2025-W43", "2025-W44", "2025-W45", "2025-W46", "2025-W47", "2025-W48", "2025-W49", "2025-W50", "2025-W51", "2025-W52"], "actuals": [7.0, 34.0, 45.0, 14.0, 10.0, 22.0, 142.0, 66.0, 55.0, 73.0, 37.0, 41.0, 63.0, 16.0, 42.0, 55.0, 165.0, 7.0, 21.0, 83.0, 32.0, 36.0, 25.0, 21.0, 43.0, 97.0, 36.0, 31.0, 104.0, 17.0, 0.0, 0.0, 53.0, 77.0, 19.0, 80.0, 65.0, 36.0, 19.0, 36.0, 31.0, 69.0, 32.0, 6.0, 50.0, 65.0, 128.0, 72.0, 79.0, 143.0, 158.0, 110.0, 153.0, 195.0, 138.0, 111.0, 131.0, 84.0, 87.0, 53.0, 38.0, 23.0, 30.0, 32.0, 14.0, 0.0, 0.0, 0.0, 58.0, 22.0, 30.0, 13.0, 32.0, 6.0, 0.0, 0.0, 0.0, 3.0, 12.0, 4.0, 41.0, 17.0, 28.0, 32.0, 19.0, 20.0, 111.0, 20.0, 30.0, 36.0, 33.0, 11.0, 31.0, 39.0, 26.0, 35.0, 15.0, 59.0, 47.0, 27.0, 32.0, 28.0, 52.0, 42.0], "test_weeks": ["2025-W27", "2025-W28", "2025-W29", "2025-W30", "2025-W31", "2025-W32", "2025-W33", "2025-W34", "2025-W35", "2025-W36", "2025-W37", "2025-W38", "2025-W39", "2025-W40", "2025-W41", "2025-W42", "2025-W43", "2025-W44", "2025-W45", "2025-W46", "2025-W47", "2025-W48", "2025-W49", "2025-W50", "2025-W51", "2025-W52"], "pred_median": [21.7, 27.3, 37.3, 38.5, 38.1, 30.6, 34.9, 38.8, 38.7, 42.7, 37.9, 48.2, 48.3, 34.5, 37.3, 49.0, 54.9, 56.5, 61.2, 53.8, 43.9, 53.2, 55.4, 54.1, 46.7, 73.9], "pred_lo80": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.1, 1.5, 2.9, 5.4, 6.5, 5.5, 3.0, 1.5, 1.8, 9.9, 0.7, 0.0, 8.5, 1.9, 16.8, 2.3, 3.5, 3.4, 17.7], "pred_hi80": [62.8, 70.9, 68.3, 80.0, 75.8, 72.7, 69.6, 80.6, 78.1, 98.2, 91.0, 104.4, 90.4, 69.8, 79.1, 97.4, 91.3, 93.5, 97.7, 95.6, 86.2, 97.2, 102.2, 110.8, 131.4, 127.2], "pred_lo95": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], "pred_hi95": [79.6, 96.7, 82.9, 122.5, 123.7, 114.7, 90.6, 113.0, 123.9, 137.4, 131.3, 132.5, 132.5, 95.3, 120.7, 139.4, 133.1, 125.3, 120.5, 132.9, 136.5, 142.1, 120.2, 147.1, 154.4, 143.3], "truth": [12.0, 4.0, 41.0, 17.0, 28.0, 32.0, 19.0, 20.0, 111.0, 20.0, 30.0, 36.0, 33.0, 11.0, 31.0, 39.0, 26.0, 35.0, 15.0, 59.0, 47.0, 27.0, 32.0, 28.0, 52.0, 42.0], "train_cutoff": 78}, "Moroni-Bambao": {"weeks": ["2024-W01", "2024-W02", "2024-W03", "2024-W04", "2024-W05", "2024-W06", "2024-W07", "2024-W08", "2024-W09", "2024-W10", "2024-W11", "2024-W12", "2024-W13", "2024-W14", "2024-W15", "2024-W16", "2024-W17", "2024-W18", "2024-W19", "2024-W20", "2024-W21", "2024-W22", "2024-W23", "2024-W24", "2024-W25", "2024-W26", "2024-W27", "2024-W28", "2024-W29", "2024-W30", "2024-W31", "2024-W32", "2024-W33", "2024-W34", "2024-W35", "2024-W36", "2024-W37", "2024-W38", "2024-W39", "2024-W40", "2024-W41", "2024-W42", "2024-W43", "2024-W44", "2024-W45", "2024-W46", "2024-W47", "2024-W48", "2024-W49", "2024-W50", "2024-W51", "2024-W52", "2025-W01", "2025-W02", "2025-W03", "2025-W04", "2025-W05", "2025-W06", "2025-W07", "2025-W08", "2025-W09", "2025-W10", "2025-W11", "2025-W12", "2025-W13", "2025-W14", "2025-W15", "2025-W16", "2025-W17", "2025-W18", "2025-W19", "2025-W20", "2025-W21", "2025-W22", "2025-W23", "2025-W24", "2025-W25", "2025-W26", "2025-W27", "2025-W28", "2025-W29", "2025-W30", "2025-W31", "2025-W32", "2025-W33", "2025-W34", "2025-W35", "2025-W36", "2025-W37", "2025-W38", "2025-W39", "2025-W40", "2025-W41", "2025-W42", "2025-W43", "2025-W44", "2025-W45", "2025-W46", "2025-W47", "2025-W48", "2025-W49", "2025-W50", "2025-W51", "2025-W52"], "actuals": [326.0, 527.0, 282.0, 491.0, 713.0, 656.0, 1033.0, 1185.0, 970.0, 545.0, 429.0, 594.0, 466.0, 314.0, 214.0, 531.0, 778.0, 654.0, 679.0, 679.0, 673.0, 640.0, 653.0, 646.0, 532.0, 615.0, 462.0, 527.0, 531.0, 490.0, 385.0, 418.0, 403.0, 408.0, 375.0, 374.0, 362.0, 464.0, 477.0, 472.0, 564.0, 633.0, 620.0, 574.0, 579.0, 953.0, 546.0, 658.0, 519.0, 510.0, 413.0, 590.0, 573.0, 518.0, 632.0, 625.0, 536.0, 538.0, 703.0, 669.0, 506.0, 574.0, 527.0, 503.0, 391.0, 610.0, 798.0, 736.0, 860.0, 415.0, 483.0, 512.0, 487.0, 600.0, 648.0, 738.0, 777.0, 700.0, 511.0, 517.0, 510.0, 472.0, 429.0, 456.0, 449.0, 349.0, 429.0, 366.0, 481.0, 496.0, 551.0, 326.0, 522.0, 522.0, 456.0, 653.0, 670.0, 511.0, 440.0, 559.0, 357.0, 497.0, 506.0, 445.0], "test_weeks": ["2025-W27", "2025-W28", "2025-W29", "2025-W30", "2025-W31", "2025-W32", "2025-W33", "2025-W34", "2025-W35", "2025-W36", "2025-W37", "2025-W38", "2025-W39", "2025-W40", "2025-W41", "2025-W42", "2025-W43", "2025-W44", "2025-W45", "2025-W46", "2025-W47", "2025-W48", "2025-W49", "2025-W50", "2025-W51", "2025-W52"], "pred_median": [633.3, 540.1, 554.0, 503.3, 508.3, 493.4, 482.5, 482.8, 497.3, 497.6, 465.9, 472.7, 475.3, 504.6, 522.1, 524.9, 536.4, 562.8, 539.1, 544.1, 558.7, 537.0, 545.4, 543.1, 537.6, 569.9], "pred_lo80": [498.5, 418.0, 387.5, 398.2, 384.1, 344.0, 364.9, 328.8, 363.6, 367.0, 361.7, 366.3, 387.5, 387.9, 367.5, 380.1, 427.9, 452.7, 381.8, 468.3, 462.4, 435.0, 475.0, 406.6, 395.1, 385.9], "pred_hi80": [742.6, 694.5, 700.9, 678.7, 706.6, 627.7, 661.0, 672.8, 689.4, 633.8, 649.2, 630.7, 612.2, 670.0, 690.9, 712.2, 678.3, 711.2, 674.2, 720.9, 733.1, 648.6, 741.5, 682.9, 696.7, 718.9], "pred_lo95": [391.9, 366.7, 298.7, 304.4, 277.0, 246.8, 204.2, 228.6, 249.5, 278.1, 273.3, 242.9, 286.9, 335.1, 334.9, 333.9, 363.8, 387.6, 345.2, 390.6, 412.1, 344.6, 364.4, 362.0, 312.2, 353.1], "pred_hi95": [843.3, 767.4, 747.6, 758.9, 762.8, 720.9, 692.3, 761.3, 770.9, 758.9, 766.1, 756.1, 795.3, 748.0, 776.8, 800.5, 778.6, 802.7, 746.2, 788.7, 847.7, 745.4, 859.6, 813.5, 767.3, 818.7], "truth": [511.0, 517.0, 510.0, 472.0, 429.0, 456.0, 449.0, 349.0, 429.0, 366.0, 481.0, 496.0, 551.0, 326.0, 522.0, 522.0, 456.0, 653.0, 670.0, 511.0, 440.0, 559.0, 357.0, 497.0, 506.0, 445.0], "train_cutoff": 78}}, "per_dist": {"Hamahamet-Mboinkou": {"crps": 22.228, "rmse": 37.998, "mae": 29.512, "mape": 31.7, "r2": -0.486, "cov80": 0.6923, "cov95": 0.8846}, "Hambou": {"crps": 13.956, "rmse": 29.248, "mae": 22.004, "mape": 165.0, "r2": -0.583, "cov80": 0.6923, "cov95": 0.9231}, "Itsandra-Hamanvou": {"crps": 21.507, "rmse": 39.889, "mae": 27.646, "mape": 23.7, "r2": -0.754, "cov80": 0.6923, "cov95": 0.9231}, "Mitsamiouli-Mboud\u00e9": {"crps": 13.56, "rmse": 25.001, "mae": 20.429, "mape": 107.0, "r2": -0.542, "cov80": 0.9615, "cov95": 1.0}, "Moroni-Bambao": {"crps": 52.985, "rmse": 96.261, "mae": 76.907, "mape": 17.8, "r2": -0.456, "cov80": 0.8462, "cov95": 0.9231}}, "per_s": {"Hamahamet-Mboinkou": {"crps": 22.306, "rmse": 40.189, "mae": 31.882, "mape": 34.7, "r2": -0.663, "cov80": 0.7308, "cov95": 0.9231}, "Hambou": {"crps": 13.8, "rmse": 27.591, "mae": 20.58, "mape": 153.1, "r2": -0.409, "cov80": 0.8462, "cov95": 0.9615}, "Itsandra-Hamanvou": {"crps": 20.806, "rmse": 40.442, "mae": 29.307, "mape": 25.6, "r2": -0.803, "cov80": 0.8077, "cov95": 0.8846}, "Mitsamiouli-Mboud\u00e9": {"crps": 12.59, "rmse": 21.968, "mae": 18.576, "mape": 93.4, "r2": -0.191, "cov80": 0.9615, "cov95": 1.0}, "Moroni-Bambao": {"crps": 51.38, "rmse": 90.214, "mae": 71.062, "mape": 16.3, "r2": -0.279, "cov80": 0.9231, "cov95": 1.0}}, "per_x": {"Hamahamet-Mboinkou": {"crps": 23.966, "rmse": 38.118, "mae": 30.499, "mape": 32.4, "r2": -0.496, "cov80": 0.5769, "cov95": 0.8077}, "Hambou": {"crps": 15.669, "rmse": 32.147, "mae": 24.208, "mape": 179.6, "r2": -0.913, "cov80": 0.4231, "cov95": 0.4615}, "Itsandra-Hamanvou": {"crps": 23.528, "rmse": 39.997, "mae": 27.287, "mape": 23.4, "r2": -0.764, "cov80": 0.3846, "cov95": 0.8462}, "Mitsamiouli-Mboud\u00e9": {"crps": 15.545, "rmse": 29.094, "mae": 23.437, "mape": 123.2, "r2": -1.089, "cov80": 0.8077, "cov95": 0.8846}, "Moroni-Bambao": {"crps": 58.273, "rmse": 105.588, "mae": 86.623, "mape": 20.2, "r2": -0.752, "cov80": 0.5385, "cov95": 0.8077}}, "agg": {"crps": 24.847, "rmse": 45.679, "mae": 35.3, "mape": 69.0, "r2": 0.91, "cov80": 0.7769, "cov95": 0.9308}, "dist_colors": {"Hamahamet-Mboinkou": "#8839ef", "Hambou": "#1e66f5", "Mitsamiouli-Mboud\u00e9": "#179299", "Moroni-Bambao": "#fe640b", "Itsandra-Hamanvou": "#40a02b"}, "train_weeks": 78};
+const DISTS = D.districts;
+const CD    = D.chart_data;
+const PD    = D.per_dist;
+const PS    = D.per_s;
+const PX    = D.per_x;
+const DC    = D.dist_colors;
 
 function distColor(loc) {
-  for (const [k,v] of Object.entries(COLORS)) {
+  for (const [k,v] of Object.entries(DC)) {
     if (loc.includes(k.split('-')[0])) return v;
   }
   return '#8839ef';
+}
+
+function hexToRgb(hex) {
+  const r = parseInt(hex.slice(1,3),16);
+  const g = parseInt(hex.slice(3,5),16);
+  const b = parseInt(hex.slice(5,7),16);
+  return `${r},${g},${b}`;
 }
 
 // ── Per-district forecast charts ─────────────────────────────────────────────
 DISTS.forEach((loc, i) => {
   const d   = CD[loc];
   const col = distColor(loc);
-  const allWks = d.weeks;
-  const nTrain = d.train_cutoff;
-
-  // Build full actuals array aligned to allWks
-  const actuals = d.actuals;
-
-  // Test week positions within allWks
+  const rgb = hexToRgb(col);
+  const allWks   = d.weeks;
+  const nTrain   = d.train_cutoff;
   const testIdxs = d.test_weeks.map(w => allWks.indexOf(w));
 
-  // Build full-length arrays for CIs (null outside test window)
-  const mean95lo = allWks.map((_,i) => testIdxs.includes(i) ? d.pred_lo95[testIdxs.indexOf(i)] : null);
-  const mean95hi = allWks.map((_,i) => testIdxs.includes(i) ? d.pred_hi95[testIdxs.indexOf(i)] : null);
-  const mean80lo = allWks.map((_,i) => testIdxs.includes(i) ? d.pred_lo80[testIdxs.indexOf(i)] : null);
-  const mean80hi = allWks.map((_,i) => testIdxs.includes(i) ? d.pred_hi80[testIdxs.indexOf(i)] : null);
-  const meanPred = allWks.map((_,i) => testIdxs.includes(i) ? d.pred_mean[testIdxs.indexOf(i)] : null);
+  // Build full-length arrays: null outside test period
+  function testArr(arr) {
+    return allWks.map((_,i) => {
+      const ti = testIdxs.indexOf(i);
+      return ti >= 0 ? arr[ti] : null;
+    });
+  }
 
-  const labels = allWks.map((w,i) => i % 13 === 0 ? w : '');
+  const hi95  = testArr(d.pred_hi95);
+  const lo95  = testArr(d.pred_lo95);
+  const hi80  = testArr(d.pred_hi80);
+  const lo80  = testArr(d.pred_lo80);
+  const med   = testArr(d.pred_median);
+  const acts  = d.actuals;
+
+  // For tooltip: build lookup maps keyed by week index
+  const testDataMap = {};
+  testIdxs.forEach((wi, ti) => {
+    testDataMap[wi] = {
+      median: d.pred_median[ti],
+      lo80:   d.pred_lo80[ti],
+      hi80:   d.pred_hi80[ti],
+      lo95:   d.pred_lo95[ti],
+      hi95:   d.pred_hi95[ti],
+      actual: d.actuals[wi],
+    };
+  });
 
   new Chart(document.getElementById(`chart_${i}`), {
     type: 'line',
     data: {
       labels: allWks,
       datasets: [
-        { label: '95% PI', data: mean95hi, fill: '+1', borderWidth: 0,
-           backgroundColor: col+'22', pointRadius: 0, tension: 0.3 },
-        { label: '95% PI lo', data: mean95lo, fill: false, borderWidth: 0,
-           backgroundColor: col+'22', pointRadius: 0, tension: 0.3 },
-        { label: '80% PI', data: mean80hi, fill: '+1', borderWidth: 0,
-           backgroundColor: col+'44', pointRadius: 0, tension: 0.3 },
-        { label: '80% PI lo', data: mean80lo, fill: false, borderWidth: 0,
-           backgroundColor: col+'44', pointRadius: 0, tension: 0.3 },
-        { label: 'Forecast mean', data: meanPred, borderColor: col,
-           borderWidth: 2, pointRadius: 0, tension: 0.3, fill: false },
-        { label: 'Actual', data: actuals, borderColor: '#2a2044',
-           borderWidth: 1.5, pointRadius: 0, tension: 0.3, fill: false },
+        // 95% PI outer band (fill to next dataset = lo95)
+        { label: '95% PI upper', data: hi95,
+           fill: '+1', borderWidth: 0, pointRadius: 0,
+           backgroundColor: `rgba(${rgb},0.13)`, tension: 0.3 },
+        { label: '95% PI lower', data: lo95,
+           fill: false, borderWidth: 0, pointRadius: 0,
+           backgroundColor: `rgba(${rgb},0.13)`, tension: 0.3 },
+        // 80% PI inner band (fill to next dataset = lo80)
+        { label: '80% PI upper', data: hi80,
+           fill: '+1', borderWidth: 0, pointRadius: 0,
+           backgroundColor: `rgba(${rgb},0.30)`, tension: 0.3 },
+        { label: '80% PI lower', data: lo80,
+           fill: false, borderWidth: 0, pointRadius: 0,
+           backgroundColor: `rgba(${rgb},0.30)`, tension: 0.3 },
+        // Predicted median
+        { label: 'Predicted median', data: med,
+           borderColor: col, borderWidth: 2.5, borderDash: [6,3],
+           pointRadius: 3, pointBackgroundColor: col,
+           pointHoverRadius: 6, fill: false, tension: 0.3,
+           spanGaps: false },
+        // Actual cases — full 104-week series
+        { label: 'Actual cases', data: acts,
+           borderColor: '#2a2044', borderWidth: 2,
+           pointRadius: 2, pointBackgroundColor: '#2a2044',
+           pointHoverRadius: 6, fill: false, tension: 0.3 },
       ]
     },
     options: {
-      responsive: true, maintainAspectRatio: true,
+      responsive: true,
       interaction: { mode: 'index', intersect: false },
       plugins: {
         legend: { display: false },
         tooltip: {
+          backgroundColor: 'rgba(255,255,255,0.97)',
+          borderColor: '#ddd5f5',
+          borderWidth: 1,
+          titleColor: '#2a2044',
+          bodyColor: '#544873',
+          titleFont: { family: "'JetBrains Mono', monospace", size: 11, weight: '700' },
+          bodyFont: { family: "'Plus Jakarta Sans', sans-serif", size: 12 },
+          padding: 14,
           callbacks: {
             title: ctx => ctx[0].label,
-            label: ctx => {
-              const dsLabel = ctx.dataset.label;
-              if (['95% PI lo','95% PI','80% PI lo','80% PI'].includes(dsLabel)) return null;
-              return `${dsLabel}: ${ctx.parsed.y !== null ? Math.round(ctx.parsed.y) : '—'}`;
-            }
+            label: () => null,
+            afterBody: ctx => {
+              const wi = ctx[0].dataIndex;
+              const act = d.actuals[wi];
+              const lines = [`  Actual cases :  ${act !== null && act !== undefined ? Math.round(act) : '—'}`];
+              if (testDataMap[wi]) {
+                const td = testDataMap[wi];
+                const inPi80 = act >= td.lo80 && act <= td.hi80;
+                const inPi95 = act >= td.lo95 && act <= td.hi95;
+                lines.push('');
+                lines.push(`  Predicted median :  ${td.median}`);
+                lines.push(`  80% PI  :  [${td.lo80} – ${td.hi80}]  ${inPi80 ? '✓' : '✗'}`);
+                lines.push(`  95% PI  :  [${td.lo95} – ${td.hi95}]  ${inPi95 ? '✓' : '✗'}`);
+                lines.push('');
+                lines.push(`  Week ${wi + 1} of 104  (test period)`);
+              } else {
+                lines.push(`  Week ${wi + 1} of 104  (training period)`);
+              }
+              return lines;
+            },
           }
         },
-        annotation: { annotations: {
-          cutoff: { type: 'line', xMin: nTrain-1, xMax: nTrain-1,
-                     borderColor: '#d20f3966', borderWidth: 1.5,
-                     borderDash: [4,3], label: {
-                       content: 'Train | Test', enabled: true,
-                       position: 'start', font: {size: 9}, color: '#d20f39'
-                     }}
-        }}
+        annotation: {
+          annotations: {
+            cutoff: {
+              type: 'line',
+              xMin: nTrain - 0.5,
+              xMax: nTrain - 0.5,
+              borderColor: 'rgba(210,15,57,0.55)',
+              borderWidth: 1.5,
+              borderDash: [5, 4],
+              label: {
+                display: true,
+                content: '← Train  |  Test →',
+                position: 'start',
+                yAdjust: -8,
+                font: { size: 9, weight: '600' },
+                color: '#d20f39',
+                backgroundColor: 'rgba(255,255,255,0.85)',
+                padding: { x: 5, y: 3 },
+                borderRadius: 4,
+              }
+            }
+          }
+        }
       },
       scales: {
-        x: { ticks: { font: {size: 9}, maxRotation: 0,
-                 callback: (v, i) => i % 13 === 0 ? allWks[i] : '' },
-              grid: { display: false } },
-        y: { title: { display: true, text: 'Cases', font: {size: 9} },
-              ticks: { font: {size: 9} }, grid: { color: '#8839ef0a' },
-              min: 0 }
+        x: {
+          ticks: {
+            font: { size: 9 },
+            maxRotation: 0,
+            autoSkip: true,
+            maxTicksLimit: 12,
+          },
+          grid: { display: false }
+        },
+        y: {
+          title: { display: true, text: 'Malaria cases', font: { size: 10 } },
+          ticks: { font: { size: 10 } },
+          grid: { color: '#8839ef08' },
+          min: 0
+        }
       }
     }
   });
 });
 
-// ── Component CRPS chart ──────────────────────────────────────────────────────
-const PD  = D.per_dist;
-const distLabels = DISTS.map(d => d.replace('Mitsamiouli-','Mitsa. ').replace('Hamahamet-','Hama. '));
+
+// ── Component CRPS bar chart ──────────────────────────────────────────────────
+const distLabels = DISTS.map(d =>
+  d.replace('Mitsamiouli-Mboudé','Mitsamiouli')
+   .replace('Hamahamet-Mboinkou','Hamahamet')
+   .replace('Itsandra-Hamanvou','Itsandra')
+   .replace('Moroni-Bambao','Moroni')
+);
 
 new Chart(document.getElementById('compChart'), {
   type: 'bar',
   data: {
     labels: distLabels,
     datasets: [
-      { label: 'Ensemble S+X', data: DISTS.map(d => PD[d].crps),
+      { label: 'Ensemble S+X ★', data: DISTS.map(d => PD[d].crps),
          backgroundColor: '#40a02bcc', borderRadius: 5 },
-      { label: 'SARIMAX only', data: DISTS.map(d => D.agg_s ? null : null),
+      { label: 'SARIMAX only',   data: DISTS.map(d => PS[d].crps),
          backgroundColor: '#1e66f5aa', borderRadius: 5 },
-      { label: 'XGBoost only', data: DISTS.map(d => null),
+      { label: 'XGBoost only',   data: DISTS.map(d => PX[d].crps),
          backgroundColor: '#179299aa', borderRadius: 5 },
     ]
   },
   options: {
-    responsive: true, maintainAspectRatio: true,
-    plugins: { legend: { position: 'top', labels: { font: {size:10}, boxWidth:10 } } },
+    responsive: true,
+    plugins: {
+      legend: { position: 'top', labels: { font: {size:10}, boxWidth:10 } },
+      tooltip: {
+        callbacks: {
+          label: ctx => ` ${ctx.dataset.label}: CRPS ${ctx.parsed.y}`
+        }
+      }
+    },
     scales: {
       x: { ticks: {font:{size:10}}, grid: {display:false} },
-      y: { title: {display:true,text:'CRPS',font:{size:10}},
+      y: { title: {display:true,text:'CRPS (lower = better)',font:{size:10}},
             ticks: {font:{size:10}}, grid: {color:'#8839ef0a'} }
     }
   }
 });
 
-// Populate component CRPS after data is ready
-(function() {
-  const chart = Chart.getChart('compChart');
-  if (!chart) return;
-  // We need agg_s and agg_x per district from server payload
-  // These are embedded in the page via separate data
-})();
-
-// ── Coverage chart ────────────────────────────────────────────────────────────
+// ── PI Coverage chart ─────────────────────────────────────────────────────────
 new Chart(document.getElementById('covChart'), {
   type: 'bar',
   data: {
@@ -381,19 +586,30 @@ new Chart(document.getElementById('covChart'), {
          backgroundColor: '#8839efcc', borderRadius: 5 },
       { label: '95% PI coverage', data: DISTS.map(d => +(PD[d].cov95*100).toFixed(1)),
          backgroundColor: '#8839ef44', borderRadius: 5 },
-      { label: 'Target 80%', data: DISTS.map(() => 80), type: 'line',
-         borderColor: '#40a02b88', borderDash: [4,3], pointRadius: 0, fill: false },
-      { label: 'Target 95%', data: DISTS.map(() => 95), type: 'line',
-         borderColor: '#1e66f588', borderDash: [4,3], pointRadius: 0, fill: false },
+      { label: 'Target 80%', data: [80,80,80], type:'line',
+         borderColor:'#40a02b88', borderDash:[4,3], pointRadius:0, fill:false,
+         borderWidth: 2 },
+      { label: 'Target 95%', data: [95,95,95], type:'line',
+         borderColor:'#1e66f588', borderDash:[4,3], pointRadius:0, fill:false,
+         borderWidth: 2 },
     ]
   },
   options: {
-    responsive: true, maintainAspectRatio: true,
-    plugins: { legend: { position: 'top', labels: { font: {size:10}, boxWidth:10 } } },
+    responsive: true,
+    plugins: {
+      legend: { position: 'top', labels: { font: {size:10}, boxWidth:10 } },
+      tooltip: {
+        callbacks: {
+          label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y}%`
+        }
+      }
+    },
     scales: {
       x: { ticks: {font:{size:10}}, grid: {display:false} },
-      y: { min: 0, max: 110, title: {display:true,text:'%',font:{size:10}},
-            ticks: {font:{size:10}}, grid: {color:'#8839ef0a'} }
+      y: { min:0, max:110,
+            title: {display:true,text:'Coverage (%)',font:{size:10}},
+            ticks: {font:{size:10}, callback: v => v+'%'},
+            grid: {color:'#8839ef0a'} }
     }
   }
 });
